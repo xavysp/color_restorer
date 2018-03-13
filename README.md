@@ -6,7 +6,10 @@ It is a python implementation for RGB color restoration from a RGB-NIR multispec
 ## Requirements
 
 Python 3
-Tensorflow  1.2 higher
+
+Tensorflow  1.2 or higher
+
 Numpy
+
 Matplotlib
 
