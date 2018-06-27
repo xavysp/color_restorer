@@ -5,6 +5,7 @@ import tensorflow as tf
 import numpy as np
 
 import os
+import sys
 import time
 import random
 from tqdm import tqdm
@@ -30,3 +31,12 @@ tf.app.flags.DEFINE_string('is_training', 'True',"""training or testing [True or
 tf.app.flags.DEFINE_string('prev_train_dir', 'checkpoints',"""training or testing [True or False]""")
 
 pp = pprint.PrettyPrinter()
+
+if FLAGS.training_model =="CDNet" or FLAGS.training_model=="ENDENet":
+    if FLAGS.is_training:
+        pp.pprint(FLAGS.__flags)
+    else:
+        pass
+else:
+    print("There is something bad, we cannot find other NN model")
+    sys.exit()
