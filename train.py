@@ -28,3 +28,5 @@ tf.app.flags.DEFINE_string('test_name', 'OMSIV_test_192.h5', """dataset choice: 
 tf.app.flags.DEFINE_string('gpu_id', '0',"""The default GPU id to use""")
 tf.app.flags.DEFINE_string('is_training', 'True',"""training or testing [True or False]""")
 tf.app.flags.DEFINE_string('prev_train_dir', 'checkpoints',"""training or testing [True or False]""")
+
+pp = pprint.PrettyPrinter()
