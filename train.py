@@ -39,7 +39,7 @@ tf.app.flags.DEFINE_string('test_file', 'OMSIV_test_192.h5', """dataset choice: 
 tf.app.flags.DEFINE_string('gpu_id', '0',"""The default GPU id to use""")
 tf.app.flags.DEFINE_string('is_training', 'True',"""training or testing [True or False]""")
 tf.app.flags.DEFINE_string('prev_train_dir', 'checkpoints',"""training or testing [True or False]""")
-tf.app.flags.DEFINE_string('optimazer', 'adam',"""training or testing [adam or momentum]""")
+tf.app.flags.DEFINE_string('optimizer', 'adam',"""training or testing [adam or momentum]""")
 
 pp = pprint.PrettyPrinter()
 
@@ -54,8 +54,8 @@ def mse_loss(y_hat, y):
     y_hat = ((y_hat- tf.reduce_min(y_hat, axis=[1, 2, 3], keepdims=True)) * 255) / ((
             tf.reduce_max(y_hat, axis=[1, 2, 3], keepdims=True) - tf.reduce_min(y_hat,axis=[1, 2, 3],
             keepdims=True))+epsilon)
-    loss= tf.losses.mean_squared_error(y, y_hat) # tf.loss.mse(label, prediction)
-    return loss
+    mse= tf.losses.mean_squared_error(y, y_hat) # tf.loss.mse(label, prediction)
+    return mse
 
 def psnr_metric(y_hat, y, maxi=255):
     epsilon = 0.0000001
@@ -75,7 +75,9 @@ def psnr_metric(y_hat, y, maxi=255):
 if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
     # ***************data preparation *********************
     if FLAGS.is_training:
+
          # dataset preparation for training
+        running_mode = 'train'
         pp.pprint(FLAGS.__flags)
         dataset_dir = os.path.join(FLAGS.dataset_dir,
                                    os.path.join(FLAGS.dataset_name,'train'))
@@ -98,6 +100,7 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
 
     else:
         # dataset preparation for testing
+        running_mode = 'test'
         pp.pprint(FLAGS.__flags)
         dataset_dir = os.path.join(FLAGS.dataset_dir,
                                    os.path.join(FLAGS.dataset_name, 'test'))
@@ -117,16 +120,18 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
     # ******************* NN modeling ***********************
 
     if __name__=="__main__":
-        with tf.name_scope('inputs'):
-            BATCH_SIZE = FLAGS.batchsize
-            IM_WIDTH= FLAGS.image_size
-            IM_HEIGHT = FLAGS.image_size
-            IM_CHANNELS = FLAGS.num_channels
-            TENSOR_SHAPE= (BATCH_SIZE,IM_HEIGHT,IM_WIDTH,IM_CHANNELS)
-            RGBN = tf.placeholder(tf.float32, shape=TENSOR_SHAPE, name='input')
-            RGB = tf.placeholder(tf.float32, shape=TENSOR_SHAPE, name='label')
-        hl=[3, 32, 64, 32, 64, 32, 3]
 
+        BATCH_SIZE = FLAGS.batch_size
+        IM_WIDTH = FLAGS.image_size
+        IM_HEIGHT = FLAGS.image_size
+        IM_CHANNELS = FLAGS.num_channels
+        TENSOR_SHAPE = (BATCH_SIZE, IM_HEIGHT, IM_WIDTH, IM_CHANNELS)
+        with tf.name_scope('inputs'):
+            RGBN = tf.placeholder(tf.float32, shape=TENSOR_SHAPE, name='X')
+            RGB = tf.placeholder(tf.float32, shape=TENSOR_SHAPE,name='Y')
+        hl=[3, 32, 64, 32, 64, 32, 3]
+        print("RGBN: ",RGBN)
+        print("RGB: ", RGB)
         if FLAGS.model_name =='CDNet':
             Y_hat, tmp = CDNet(hl, RGBN, reuse=False,train=True) # training
             Y_hatv,tmp = CDNet(hl, RGBN,reuse=True,train=False) # for validation
@@ -136,29 +141,30 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
         else:
             print("We do not find other models")
             sys.exit()
-        with tf.name_scope("Training Loss"):
-            loss = mse_loss(Y_hat, Y)
 
-        with tf.name_scope("Valid Loss"):
-            loss_val = mse_loss(Y_hatv, Y)
+        with tf.name_scope("Loss"):
+            loss = mse_loss(Y_hat, RGB)
+
+        with tf.name_scope("Loss_v"):
+            loss_val = mse_loss(Y_hatv, RGB)
 
         with tf.name_scope("Accuracy"):
-            right_pred =tf.equal(tf.argmax(Y_hat,1), tf.argmax(Y,1))  # .outputs
+            right_pred =tf.equal(tf.argmax(Y_hat,1), tf.argmax(RGB,1))  # .outputs
             accuracy = tf.reduce_mean(tf.cast(right_pred, tf.float32))
 
-        with tf.name_scope("Training PNSR"):
-            psnr = psnr_metric(Y_hat, Y, maxi=255.0)
+        with tf.name_scope("PNSR"):
+            psnr = psnr_metric(Y_hat, RGB, maxi=255.0)
 
-        with tf.name_scope("Valid PNSR"):
-            psnr_val = psnr_metric(Y_hat, Y, maxi=255.0)
+        with tf.name_scope("PNSR_v"):
+            psnr_val = psnr_metric(Y_hat, RGB, maxi=255.0)
 
-        with tf.name_scope("Learning rate"):
-            lr_var = tf.Variable(FLAGS.learngin_rate,trainable=False)
+        with tf.name_scope("Learning_rate"):
+            lr_var = tf.Variable(FLAGS.learning_rate,trainable=False)
 
         if FLAGS.optimizer =="adam":
-            train_op = tf.train.AdamOptimizer(learning_rate=FLAGS.learngin_rate).minimize(loss)
+            train_op = tf.train.AdamOptimizer(learning_rate=FLAGS.learning_rate).minimize(loss)
         elif FLAGS.optimizer == "momentum":
-            train_op = tf.train.MomentumOptimizer(learning_rate=FLAGS.learngin_rate,
+            train_op = tf.train.MomentumOptimizer(learning_rate=FLAGS.learning_rate,
                                                   momentum=0.9).minimize(loss)
         else:
             print("There were just two optimizer, please try again")
@@ -188,7 +194,7 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
         checkpoint_dir = "checkpoints/"+FLAGS.model_name
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
-        tl.files.load_ckpt(sess=sess, mode_name='params_{}.ckpt'.format(tl.global_flag['mode']),
+        tl.files.load_ckpt(sess=sess, mode_name='params_{}.ckpt'.format(running_mode),
                            save_dir=checkpoint_dir)
         # training...
         def train_model(sess, x,y,n_train,batch_size, global_step,Train=False):
@@ -201,7 +207,8 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
                 batch_x = x[idx_i]
                 batch_y = y[idx_i]
                 feed_dict = {RGBN:batch_x, RGB:batch_y}
-                _,loss_val, summary, y_hat = sess.run([train_op,loss, merged_summary_op, Y_hat])
+                _,loss_val, summary, y_hat = sess.run([train_op,loss, merged_summary_op, Y_hat],
+                                                      feed_dict=feed_dict)
                 global_step+=1
                 summary_train.add_summary(summary, global_step=global_step)
             tmp_idx =np.random.permutation(batch_size)[0]
