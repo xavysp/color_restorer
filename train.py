@@ -2,6 +2,7 @@
 
 """
 import tensorflow as tf
+import tensorlayer as tl
 import numpy as np
 
 import os
@@ -127,21 +128,29 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
         hl=[3, 32, 64, 32, 64, 32, 3]
 
         if FLAGS.model_name =='CDNet':
-            Y_hat, tmp = CDNet(hl, RGBN, reuse=False,train=True)
+            Y_hat, tmp = CDNet(hl, RGBN, reuse=False,train=True) # training
+            Y_hatv,tmp = CDNet(hl, RGBN,reuse=True,train=False) # for validation
         elif FLAGS.model_name=='ENDENet':
-            Y_hat, tmp = ENDENet(hl, RGBN, reuse=False,train=True)
+            Y_hat, tmp = ENDENet(hl, RGBN, reuse=False,train=True)  # training
+            Y_hatv, tmp = CDNet(hl, RGBN, reuse=True, train=False)  # for validation
         else:
             print("We do not find other models")
             sys.exit()
-        with tf.name_scope("Loss"):
+        with tf.name_scope("Training Loss"):
             loss = mse_loss(Y_hat, Y)
+
+        with tf.name_scope("Valid Loss"):
+            loss_val = mse_loss(Y_hatv, Y)
 
         with tf.name_scope("Accuracy"):
             right_pred =tf.equal(tf.argmax(Y_hat,1), tf.argmax(Y,1))  # .outputs
             accuracy = tf.reduce_mean(tf.cast(right_pred, tf.float32))
 
-        with tf.name_scope("PNSR"):
+        with tf.name_scope("Training PNSR"):
             psnr = psnr_metric(Y_hat, Y, maxi=255.0)
+
+        with tf.name_scope("Valid PNSR"):
+            psnr_val = psnr_metric(Y_hat, Y, maxi=255.0)
 
         with tf.name_scope("Learning rate"):
             lr_var = tf.Variable(FLAGS.learngin_rate,trainable=False)
@@ -155,15 +164,57 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
             print("There were just two optimizer, please try again")
             sys.exit()
         # to visualize tensorflow summary graph
-        tf.summary.scalar("Loss", loss)
-        tf.summary.scalar("PSNR", psnr)
-        tf.summary.scalar("Accuracy", accuracy)
+        tf.summary.scalar("Training_Loss", loss)
+        tf.summary.scalar("Training_PSNR", psnr)
+        tf.summary.scalar("Training_Accuracy", accuracy)
+        tf.summary.scalar("Valid_Loss", loss_val)
+        tf.summary.scalar("Valid_PSNR", psnr_val)
         merged_summary_op = tf.summary.merge_all()
 
         saver = tf.train.Saver()
         init_op = tf.global_variables_initializer()
         sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
         sess.run(init_op)
+
+        logs_train_dir = "logs/"+FLAGS.model_name+'/train'
+        logs_test_dir = "logs"+FLAGS.model_name+'/test'
+        if not os.path.exists(logs_train_dir):
+            os.makedirs(logs_train_dir)
+        if not os.path.exists(logs_test_dir):
+            os.makedirs(logs_test_dir)
+        summary_train = tf.summary.FileWriter(logs_train_dir, sess.graph)
+        summary_test = tf.summary.FileWriter(logs_test_dir,sess.graph)
+
+        checkpoint_dir = "checkpoints/"+FLAGS.model_name
+        if not os.path.exists(checkpoint_dir):
+            os.makedirs(checkpoint_dir)
+        tl.files.load_ckpt(sess=sess, mode_name='params_{}.ckpt'.format(tl.global_flag['mode']),
+                           save_dir=checkpoint_dir)
+        # training...
+        def train_model(sess, x,y,n_train,batch_size, global_step,Train=False):
+            idcs = np.random.permutation(range(n_train))
+            pbar = tqdm(range(n_train // batch_size))
+
+            for step in pbar:
+                start_time = time.time()
+                idx_i = idcs[step*batch_size:(step+1)*batch_size]
+                batch_x = x[idx_i]
+                batch_y = y[idx_i]
+                feed_dict = {RGBN:batch_x, RGB:batch_y}
+                _,loss_val, summary, y_hat = sess.run([train_op,loss, merged_summary_op, Y_hat])
+                global_step+=1
+                summary_train.add_summary(summary, global_step=global_step)
+            tmp_idx =np.random.permutation(batch_size)[0]
+            return loss_val, y_hat[tmp_idx,...],batch_y[tmp_idx,...]
+
+        def valid_model(sess, x,)
+
+
+
+
+
+
+
 
 
 
