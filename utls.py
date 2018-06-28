@@ -321,7 +321,7 @@ def psnr(img_pred, img_lab):
         img_pred = normalization_data_0255(img_pred)
     # assert np.max(img_pred)>1
     # assert np.max(img_lab) > 1
-    print("max min ", np.max(img_pred), np.min(img_pred), np.max(img_lab), np.min(img_lab))
+    # print("max min ", np.max(img_pred), np.min(img_pred), np.max(img_lab), np.min(img_lab))
 
     mse_R = mse(img_pred[:, :, 0], img_lab[:, :, 0])
     mse_G = mse(img_pred[:, :, 1], img_lab[:, :, 1])

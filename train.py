@@ -223,12 +223,12 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
             m_res = np.zeros((x.shape[0], 3))
             for i in range(n):
                 feed_dict={RGBN:x,RGB:y}
-                y_hat,summary_val = sess.run([Y_hatv,merged_summary_op],feed_dict=feed_dict)
+                l_v,y_hat,summary_val = sess.run([loss_val,Y_hatv,merged_summary_op],feed_dict=feed_dict)
 
             for i in range(x.shape[0]):
                 m_res[i, 0], m_res[i, 1], m_res[i, 2] = ssim_psnr(y_hat[i, ...], y[i, ...])
             summary_test.add_summary(summary_val,global_step=global_step)
-            return m_res, y_hat[27,...], y[27,...]
+            return l_v,m_res, y_hat[27,...], y[27,...]
 
         global_step =0
         n_train = X.shape[0]
@@ -259,21 +259,22 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
                                    save_dir=checkpoint_dir, global_step=global_step)
             #validation...
             print("Validating...")
-            metrics,y_hatv,y_val = valid_model(sess,Xval,Yval,BATCH_SIZE,global_step)
+            l_val,metrics,y_hatv,y_val = valid_model(sess,Xval,Yval,BATCH_SIZE,global_step)
             y_hatv = normalization_data_01(y_hatv)
             y_val = normalization_data_01(y_val)
             tmp_im = np.concatenate((normalization_data_0255(y_hatv ** 0.4040),
                                      normalization_data_0255(y_val ** 0.4040)))
 
             # Valid visualization
-            plt.title("Epoch:" + str(epoch + 1) + " Loss:" + '%.5f' % l + "Validating")
+            plt.title("Epoch:" + str(epoch + 1) + " Loss:" + '%.5f' % np.float32(l_val) + "Validating")
             plt.imshow(np.uint8(tmp_im))
             plt.draw()
             plt.pause(0.0001)
 
             print('Training loss = %.7f in %d epochs, %d steps.' % (l, epoch, global_step))
-            print('validation MSE-SSIM-PSNR = %.7f in %d epochs, %d steps.' % (
-                np.mean(metrics,axis=0), epoch, global_step))
+            print(
+                "Validation MSE-SSIM-PSNR: {} in {} epochs steps {}".format(np.float16(np.mean(metrics, axis=0)), epoch,
+                                                                            global_step))
 
 
 else:
