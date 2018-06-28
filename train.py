@@ -205,17 +205,53 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
                 global_step+=1
                 summary_train.add_summary(summary, global_step=global_step)
             tmp_idx =np.random.permutation(batch_size)[0]
-            return loss_val, y_hat[tmp_idx,...],batch_y[tmp_idx,...]
+            duration = time.time() - start_time
+            if global_step % 100 == 0:
+                pbar.set_description('loss = %.7f (%.5f sec)' % (loss_val, duration))
 
-        def valid_model(sess, x,)
+            return loss_val, y_hat[tmp_idx,...],batch_y[tmp_idx,...], global_step
 
+        def valid_model(sess, x,y,batch_size, global_step):
+            n = x.shape[0]//batch_size
+            m_res = np.zeros((x.shape[0], 3))
+            for i in range(n):
+                feed_dict={RGBN:x,RGB:y}
+                y_hat,summary_val = sess.run([Y_hatv,merged_summary_op],feed_dict=feed_dict)
 
+            for i in range(x.shape[0]):
+                m_res[i, 0], m_res[i, 1], m_res[i, 2] = ssim_psnr(y_hat[i, ...], y[i, ...])
+            summary_test.add_summary(summary_val,global_step=global_step)
+            return m_res, y_hat[27,...]
 
+        global_step =0
+        n_train = X.shape[0]
+        initial_time= time.time()
+        for epoch in range(FLAGS.num_epochs):
+            epoch_time = time.time()
+            print("training...")
+            l,y_hat,y,g_s=train_model(sess, X,Y,n_train,BATCH_SIZE,global_step,True)
 
+            y_hat = normalization_data_01(y_hat)
+            y = normalization_data_01(y)
+            tmp_im = np.concatenate((normalization_data_0255(y_hat**0.4040),
+                                     normalization_data_0255(y**0.4040)))
 
+            #visualization
+            plt.title("Epoch:"+str(epoch+1)+" Loss:"+'%.5f' % l+" training")
+            plt.imshow(np.uint8(tmp_im))
+            plt.draw()
+            plt.pause(0.0001)
 
-
-
+            global_step+= n_train//BATCH_SIZE
+            #saving...
+            current_time = (time.time()-initial_time)/60
+            if (epoch+1)%1000==0 or((current_time/60)>12):
+                if (current_time/60)>12:
+                    initial_time = time.time()
+                tl.files.save_ckpt(sess=sess, mode_name='params_{}.ckpt'.format(tl.global_flag['mode']),
+                                   save_dir=checkpoint_dir, global_step=global_step)
+            #validation...
+            metrics,y_hatv = valid_model(sess,)
 
 
 
