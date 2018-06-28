@@ -252,10 +252,10 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
             global_step+= n_train//BATCH_SIZE
             #saving...
             current_time = (time.time()-initial_time)/60
-            if (epoch+1)%1000==0 or((current_time/60)>12):
+            if (epoch)%1000==0 or((current_time/60)>12):
                 if (current_time/60)>12:
                     initial_time = time.time()
-                tl.files.save_ckpt(sess=sess, mode_name='params_{}.ckpt'.format(tl.global_flag['mode']),
+                tl.files.save_ckpt(sess=sess, mode_name='params_{}.ckpt'.format(running_mode),
                                    save_dir=checkpoint_dir, global_step=global_step)
             #validation...
             print("Validating...")
