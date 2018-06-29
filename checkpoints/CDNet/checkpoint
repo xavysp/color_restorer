@@ -1,2 +1,2 @@
-model_checkpoint_path: "params_train.ckpt-96"
-all_model_checkpoint_paths: "params_train.ckpt-96"
+model_checkpoint_path: "params_train.ckpt-43968"
+all_model_checkpoint_paths: "params_train.ckpt-43968"
