@@ -26,7 +26,7 @@ from models.endenet import net as ENDENet
 FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_integer('image_size', 192,"""The size of the images to process""")
-tf.app.flags.DEFINE_string("model_name",'CDNet',"Choise one of [CDNet, ENDENet]")
+tf.app.flags.DEFINE_string("model_name",'ENDENet',"Choise one of [CDNet, ENDENet]")
 tf.app.flags.DEFINE_integer('num_channels', 3,"""The number of channels in the images to process""")
 tf.app.flags.DEFINE_integer('batch_size', 128,"""The size of the mini-batch""")
 tf.app.flags.DEFINE_integer('num_epochs', 3001,"""The number of iterations during the training""")
@@ -137,7 +137,7 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
             Y_hatv,tmp = CDNet(hl, RGBN,reuse=True,train=False) # for validation
         elif FLAGS.model_name=='ENDENet':
             Y_hat, tmp = ENDENet(hl, RGBN, reuse=False,train=True)  # training
-            Y_hatv, tmp = CDNet(hl, RGBN, reuse=True, train=False)  # for validation
+            Y_hatv, tmp = ENDENet(hl, RGBN, reuse=True, train=False)  # for validation
         else:
             print("We do not find other models")
             sys.exit()
@@ -257,6 +257,7 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
                 initial_time = time.time()
                 tl.files.save_ckpt(sess=sess, mode_name='params_{}.ckpt'.format(running_mode),
                                    save_dir=checkpoint_dir, global_step=global_step)
+                print("training saved in: ", epoch)
             #validation...
             print("Validating...")
             l_val,metrics,y_hatv,y_val = valid_model(sess,Xval,Yval,BATCH_SIZE,global_step)
