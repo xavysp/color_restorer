@@ -1,6 +1,10 @@
 """
 
 """
+
+__author__ = "Xavier Soria Poma, CVC-UAB"
+__email__ = "xsoria@cvc.uab.es / xavysp@gmail.com"
+
 import tensorflow as tf
 import tensorlayer as tl
 import numpy as np
