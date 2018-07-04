@@ -41,7 +41,7 @@ tf.app.flags.DEFINE_string('dataset_name', 'omsiv', """Dataset used by nir_clean
 tf.app.flags.DEFINE_string('train_file', 'OMSIV_train_192.h5', """dataset choice:[OMSIV_train_192.h5 or SSOMSI_train_192.h5]""")
 tf.app.flags.DEFINE_string('test_file', 'OMSIV_test_192.h5', """dataset choice: [OMSIV_test_192.h5 /SSOMSI_test_192.h5]""")
 tf.app.flags.DEFINE_string('gpu_id', '0',"""The default GPU id to use""")
-tf.app.flags.DEFINE_string('is_training', 'True',"""training or testing [True or False]""")
+tf.app.flags.DEFINE_string('is_training', 'False',"""training or testing [True or False]""")
 tf.app.flags.DEFINE_string('prev_train_dir', 'checkpoints',"""training or testing [True or False]""")
 tf.app.flags.DEFINE_string('optimizer', 'adam',"""training or testing [adam or momentum]""")
 
