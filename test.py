@@ -47,7 +47,7 @@ tf.app.flags.DEFINE_string('gpu_id', '0',"""The default GPU id to use""")
 tf.app.flags.DEFINE_string('is_training', 'False',"""training or testing [True or False]""")
 tf.app.flags.DEFINE_string('prev_train_dir', 'checkpoints',"""training or testing [True or False]""")
 tf.app.flags.DEFINE_string('optimizer', 'adam',"""training or testing [adam or momentum]""")
-tf.app.flags.DEFINE_string('is_image', 'False',"""training or testing [adam or momentum]""")
+tf.app.flags.DEFINE_string('is_image', 'True',"""training or testing [adam or momentum]""")
 
 
 pp = pprint.PrettyPrinter()
@@ -57,11 +57,11 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
     if FLAGS.is_training:
         running_mode = 'test'
         pp.pprint(FLAGS.__flags)
-        dataset_dir = os.path.join(FLAGS.dataset_dir,
-                                   os.path.join(FLAGS.dataset_name, 'test'))
-        dataset_path = os.path.join(dataset_dir, FLAGS.test_file)
-        data, label = read_dataset_h5(dataset_path)
         if FLAGS.dataset_name == "omsiv" and  FLAGS.is_image=="False":
+            dataset_dir = os.path.join(FLAGS.dataset_dir,
+                                       os.path.join(FLAGS.dataset_name, 'test'))
+            dataset_path = os.path.join(dataset_dir, FLAGS.test_file)
+            data, label = read_dataset_h5(dataset_path)
             data = normalization_data_01(data)
             label = normalization_data_01(label)
             X = data[:, :, :, 0:3]
@@ -70,8 +70,21 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
             print("X size: ", X.shape)
             del data, label
 
-        elif FLAGS.is_image:
-            pass
+        elif FLAGS.is_image=="True": # for testing a single image
+            img_dir = os.path.join(FLAGS.dataset_dir,
+                                       os.path.join(FLAGS.dataset_name, 'test'))
+            dataset_path = os.path.join(img_dir, 'OMSIV_raw_img.h5')
+            data, label = read_dataset_h5(dataset_path)
+
+            data = normalization_data_01(data)
+            label = normalization_data_01(label)
+            X = data[:, :, 0:3]
+            Y = label[:, ...]
+            X=np.expand_dims(X,axis=0)
+            Y=np.expand_dims(Y,axis=0)
+            print("Y size: ", Y.shape)
+            print("X size: ", X.shape)
+            del data, label
         else:
 
             print("this implementation just works with omsiv")
@@ -82,7 +95,7 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
         IM_WIDTH = X.shape[1]
         IM_HEIGHT = X.shape[2]
         IM_CHANNELS = FLAGS.num_channels
-        TENSOR_SHAPE = (BATCH_SIZE, IM_HEIGHT, IM_WIDTH, IM_CHANNELS)
+        TENSOR_SHAPE = (BATCH_SIZE, IM_WIDTH,IM_HEIGHT, IM_CHANNELS)
 
         RGBN = tf.placeholder(tf.float32, shape=TENSOR_SHAPE)
 
@@ -107,15 +120,28 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
         n = X.shape[0] // BATCH_SIZE
         for i in range(n):
             pred = sess.run(Y_hat,{RGBN:X})
+
         pred = normalization_data_01(pred)
 
-        n = np.random.permutation(pred.shape[0])[7]
-        img = pred[n,...]
-        img = img**0.4040
-        img = np.uint8(img*255)
-        cv2.imshow('random_result', img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-        pred_path = '/opt/dataset/omsiv/result/'+FLAGS.model_name+'_res.h5'
-        save_results_h5(pred_path,pred, Y,X)
+        if FLAGS.is_image=="True":
+            img = np.squeeze(pred)
+            img = img**0.4040
+            img = np.uint8(img*255)
+            cv2.imshow('random_result', img)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+            pred_path = '/opt/dataset/omsiv/result/'+FLAGS.model_name+'_resImg.h5'
+            save_results_h5(pred_path,pred, Y,X)
+
+        else:
+
+            n = np.random.permutation(pred.shape[0])[7]
+            img = pred[n,...]
+            img = img**0.4040
+            img = np.uint8(img*255)
+            cv2.imshow('random_result', img)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+            pred_path = '/opt/dataset/omsiv/result/'+FLAGS.model_name+'_res.h5'
+            save_results_h5(pred_path,pred, Y,X)
 
