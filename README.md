@@ -45,7 +45,12 @@ Two different CNN-based architectures are proposed.
 
 ## Setup
 
+All code was developed and tested on Ubuntu 16.04 with Python 3.5 and Tensorflow 1.8
 
+Before running the code, you need to download 
+the [dataset for training](https://drive.google.com/open?id=1bNYC4NF3uJa9Sig5VCpDYx3pLKcZCYbm)
+ and [dataset for testing](https://drive.google.com/open?id=1otfV1gg7NdqesJnpmBPvNBrcFRFJKi7s).
+ 
 
 ## Requirements
 
