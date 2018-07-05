@@ -3,7 +3,7 @@ It is a python implemenation of [Wide-Band Color Imagery Restoration for RGB-NIR
 in Tensorflow 1.8.
 
 <div align='center'>
-<img src="figs/result_visu.png" width="700"/>
+<img src="figs/result_visu.png" width="800"/>
 </div>
 
 Multi-spectral RGB-NIR sensors have become ubiquitous in recent years.
@@ -21,6 +21,23 @@ Multi-spectral RGB-NIR sensors have become ubiquitous in recent years.
 
 
 ## Soon, code and trained parameters
+
+##Models
+
+Two different CNN-based architectures are proposed.
+ The first one consists of a Convolutional and 
+ Deconvolutional Neural Network (CDNet) that is 
+ formed by two and four hidden layers, respectively
+  (see Figs. below).
+  the output layer gives a predicted image 
+  ~RGB supervised by the ground truth image (RGB), 
+  in summary, ~RGB= CDNet(RGB+N,RGB), where 
+  $X=[R_{vis+nir}, G_{vis+nir}, B_{vis+nir}]$, $Y=[R_{vis}, G_{vis}, B_{vis}]$ and $\hat{Y}= [\hat{R}_{vis}, \hat{G}_{vis}, \hat{B}_{vis}]$.
+  
+  <div align='center'>
+<img src="figs/CDNet_arch.png" width="800"/>
+<img src="figs/ENDENet_arch.png" width="800"/>
+</div>
 
 ## Requirements
 
