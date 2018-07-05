@@ -21,8 +21,6 @@ Multi-spectral RGB-NIR sensors have become ubiquitous in recent years.
   is OMSIV from [SSMID](https://xavysp.github.io/post/ssmid/).
 
 
-## Soon, code and trained parameters
-
 ## Models
 
 Two different CNN-based architectures are proposed.
@@ -44,6 +42,10 @@ Two different CNN-based architectures are proposed.
 <img src="figs/CDNet_arch.png" width="800"/>
 <img src="figs/ENDENet_arch.png" width="800"/>
 </div>
+
+## Setup
+
+
 
 ## Requirements
 
