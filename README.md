@@ -32,7 +32,12 @@ Two different CNN-based architectures are proposed.
   the output layer gives a predicted image 
   ~RGB supervised by the ground truth image (RGB), 
   in summary, ~RGB= CDNet(RGB+N,RGB), where 
-  $X=[R_{vis+nir}, G_{vis+nir}, B_{vis+nir}]$, $Y=[R_{vis}, G_{vis}, B_{vis}]$ and $\hat{Y}= [\hat{R}_{vis}, \hat{G}_{vis}, \hat{B}_{vis}]$.
+  RGB+N is a color image corrumpted by NIR information
+  because of cross-talking.
+  
+  ENDENet (second row in the fig. below), has the same characteristics
+  and parameters, the difference is the encoding and decoding
+  process in the convolution and deconvolutional stage.
   
   <div align='center'>
 <img src="figs/CDNet_arch.png" width="800"/>
