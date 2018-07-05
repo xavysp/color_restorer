@@ -17,7 +17,8 @@ Multi-spectral RGB-NIR sensors have become ubiquitous in recent years.
   high-resolution RGB image by means of convolutional neural networks. 
   They are evaluated with several outdoor images; both architectures reach 
   a similar performance when evaluated in different scenarios and using 
-  different similarity metrics.
+  different similarity metrics. The dataset used for the training and testing
+  is OMSIV from [SSMID](https://xavysp.github.io/post/ssmid/).
 
 
 ## Soon, code and trained parameters
