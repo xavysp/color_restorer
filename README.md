@@ -22,7 +22,7 @@ Multi-spectral RGB-NIR sensors have become ubiquitous in recent years.
 
 ## Soon, code and trained parameters
 
-##Models
+## Models
 
 Two different CNN-based architectures are proposed.
  The first one consists of a Convolutional and 
@@ -69,7 +69,6 @@ If you use this code for your research, please cite our papers.
      
     Restoration approach:
      
-    
     @article{soria2018rgbn_restorer,
       title={Wide-Band Color Imagery Restoration for RGB-NIR Single Sensor Images.},
       author={Soria, X and Sappa, AD and Hammoud, RI},
