@@ -2,7 +2,9 @@
 It is a python implemenation of [Wide-Band Color Imagery Restoration for RGB-NIR Single Sensor Images](http://www.mdpi.com/1424-8220/18/7/2059)
 in Tensorflow 1.8.
 
+<div align='center'>
 <img src="figs/result_visu.png" width="700"/>
+</div>
 
 Multi-spectral RGB-NIR sensors have become ubiquitous in recent years.
  These sensors allow the visible and near-infrared spectral bands of a
