@@ -30,3 +30,37 @@ Numpy
 
 Matplotlib
 
+## Citation
+
+If you use this code for your research, please cite our papers.
+
+    Dataset:
+     
+    
+    @INPROCEEDINGS{8310105,
+    author={X. Soria and A. D. Sappa and A. Akbarinia},
+    booktitle={2017 Seventh International Conference on Image Processing Theory, Tools and Applications (IPTA)},
+    title={Multispectral single-sensor RGB-NIR imaging: New challenges and opportunities},
+    year={2017},
+    pages={1-6},
+    keywords={cameras;computer vision;hyperspectral imaging;image colour analysis;image resolution;image restoration;image sensors;infrared imaging;neural nets;;RGBN outdoor dataset;color distortion;color restoration;multispectral single-sensor RGB-NIR imaging;near infrared spectral bands;single sensor multispectral images;specular materials;visible spectral bands;Image color analysis;Image restoration;Sensitivity;Vegetation mapping;Color restoration;Multispectral images;Neural networks;RGB-NIR dataset;Single-sensor cameras},
+    doi={10.1109/IPTA.2017.8310105},
+    ISSN={2154-512X},
+    month={Nov},}
+     
+    Restoration approach:
+     
+    
+    @article{soria2018rgbn_restorer,
+      title={Wide-Band Color Imagery Restoration for RGB-NIR Single Sensor Images.},
+      author={Soria, X and Sappa, AD and Hammoud, RI},
+      journal={Sensors (Basel, Switzerland)},
+      volume={18},
+      number={7},
+      pages={2059},
+      doi={10.3390/s18072059},
+      ISSN={1424-8220},
+      year={2018}}
+        
+    
+
