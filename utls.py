@@ -210,19 +210,6 @@ def normalization_data_101(data):
         return data
 
 
-def triplet_loss(RN,GN,BN, margin):
-    """
-        Compute the contrastive loss as in
-    L = || f_a - f_p ||^2 - || f_a - f_n ||^2 + m
-
-    :param RN:
-    :param GN:
-    :param BN:
-    :param margin:
-    :return:
-    """
-    pass
-
 def ssim_psnr(img_pred, img_lab):
     """
     The Mean squared Error for image similarity
@@ -336,23 +323,6 @@ def psnr(img_pred, img_lab):
         return psnr_R, psnr_G, psnr_B
 
 
-# for denoising autoencoder --- input image corruption
-def corrupt(x):
-    """Take an input tensor and add uniform masking.
-    Parameters
-    ----------
-    x : Tensor/Placeholder
-        Input to corrupt.
-    Returnsmat
-    -------
-    x_corrupted : Tensor
-        50 pct of values corrupted.
-    """
-    return tf.multiply(x, tf.cast(tf.random_uniform(shape=tf.shape(x),
-                                               minval=0,
-                                               maxval=2,
-dtype=tf.int32), tf.float32))
-
 def save_results_h5(savepath,data, label, test = None, result_name=None, label_name=None):
     if result_name==None or label_name==None:
         if np.any(test == None):
@@ -375,17 +345,4 @@ def save_results_h5(savepath,data, label, test = None, result_name=None, label_n
             hf.create_dataset(label_name, data=label)
             print(result_name, "[", data.shape, " and ", label_name, label.shape, "] saved in: ", savepath)
 
-
-def save_variable_h5(savepath, data):
-
-    with h5py.File(savepath, 'w') as hf:
-        hf.create_dataset('data', data=data)
-
-        print("Data [", data.shape, "] saved in: ", savepath)
-
-def open_last_file(path,ext):
-    # the os.path.getctime gives you a file which is lastly saved
-    path = path+'/*.'+ext
-    saved_file = glob.glob(path)
-    return max(saved_file, key=os.path.getctime)
 

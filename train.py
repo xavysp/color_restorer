@@ -21,7 +21,6 @@ from utls import (read_dataset_h5,
                    normalization_data_01,
                    normalization_data_0255,
                    mse, ssim_psnr,
-                   save_variable_h5,
                    save_results_h5)
 from models.cdent import net as CDNet
 from models.endenet import net as ENDENet

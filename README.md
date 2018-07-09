@@ -1,6 +1,6 @@
 # color_restorer
 It is a python implemenation of [Wide-Band Color Imagery Restoration for RGB-NIR Single Sensor Images](http://www.mdpi.com/1424-8220/18/7/2059)
-in Tensorflow 1.8.
+in Tensorflow.
 
 <div align='center'>
 <img src="figs/result_visu.png" width="800"/>
@@ -34,7 +34,7 @@ Two different CNN-based architectures are proposed.
   RGB+N is a color image corrumpted by NIR information
   because of cross-talking.
   
-  ENDENet (second row in the fig. below), has the same characteristics
+  ENDENet (second row in the Fig. below), has the same characteristics
   and parameters, the difference is the encoding and decoding
   process in the convolution and deconvolutional stage.
   
