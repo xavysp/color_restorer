@@ -1,4 +1,4 @@
-# color_restorer
+# CDNet and ENDENet models
 It is a python implemenation of [Wide-Band Color Imagery Restoration for RGB-NIR Single Sensor Images](http://www.mdpi.com/1424-8220/18/7/2059)
 in Tensorflow.
 
