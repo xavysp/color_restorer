@@ -2,19 +2,15 @@
 
 """
 
-import os
-import glob
+# import os
+# import glob
 import h5py
-import scipy.io as sio
-import random
-import matplotlib.pyplot as plt
+from termcolor import colored
+# import matplotlib.pyplot as plt
 from skimage.measure import compare_ssim as ssim
 
-from PIL import Image
-import scipy.misc
-import scipy.ndimage
 import numpy as np
-# import cv2
+import cv2
 
 import tensorflow as tf
 
@@ -22,7 +18,7 @@ import tensorflow as tf
 FLAGS = tf.app.flags.FLAGS
 
 
-def read_dataset_h5(path):
+def h5_reader(path):
     """
     Read .h5 file format data h5py <<.File>>
     :param path:file path of desired file
@@ -51,30 +47,35 @@ def read_dataset_h5(path):
             test = None
             print("Error reading path: ",path)
 
-        print(n_variables, " vars opened from: ", path)
+        # print(n_variables, " vars opened from: ", path)
         return data, label, test
 
 
-def save_results_h5(savepath,data, label, test = None, result_name=None, label_name=None):
-    if result_name==None or label_name==None:
-        if np.any(test == None):
+def h5_writer(savepath=None,data=None, label=None, test = None, result_name=None, label_name=None,n_val=1):
 
-            with h5py.File(savepath, 'w') as hf:
-                hf.create_dataset('data', data=data)
-                hf.create_dataset('label', data=label)
-                print("Data [", data.shape, "and label ", label.shape, "] saved in: ", savepath)
-        else:
-            with h5py.File(savepath, 'w') as hf:
-                hf.create_dataset('data', data=data)
-                hf.create_dataset('label', data=label)
-                hf.create_dataset('test', data=test)
-                print("Data [", data.shape, ", label ", label.shape, "and test ", test.shape,"] saved in: ", savepath)
-
-    else:
+    if n_val==3 and (result_name==None or label_name==None):
+        with h5py.File(savepath, 'w') as hf:
+            hf.create_dataset('data', data=data)
+            hf.create_dataset('label', data=label)
+            hf.create_dataset('test', data=test)
+            print("Data [", data.shape, ", label ", label.shape, "and test ", test.shape, "] saved in: ", savepath)
+    elif n_val==2 and (result_name==None or label_name==None):
+        with h5py.File(savepath, 'w') as hf:
+            hf.create_dataset('data', data=data)
+            hf.create_dataset('label', data=label)
+            print("Data [", data.shape, "and label ", label.shape, "] saved in: ", savepath)
+    elif n_val==1 and (result_name==None or label_name==None):
+        with h5py.File(savepath, 'w') as hf:
+            hf.create_dataset('data', data=data, dtype='float32')
+            print("Data [", data.shape, "] saved in: ", savepath)
+    elif n_val==2 and (result_name is not None and label_name is not None):
         with h5py.File(savepath, 'w') as hf:
             hf.create_dataset(result_name, data=data)
             hf.create_dataset(label_name, data=label)
             print(result_name, "[", data.shape, " and ", label_name, label.shape, "] saved in: ", savepath)
+    else:
+        print('Sorry there is an error, please check our h5_writer() function')
+        return
 
 def normalization_data_0255(data):
     """
@@ -137,32 +138,31 @@ def normalization_data_01(data):
     :param data:
     :return:
     """
-    ep = 0.000001
-    if not (len(data.shape)<=3):
+    epsilon = 1e-12
+    if np.sum(np.isnan(data))>0:
+        print('NaN detected before Normalization')
+        return 'variable has NaN values'
+    if len(data.shape)>3:
+        # data with batch (tensors)
         n_imgs = data.shape[0]
         data = np.float32(data)
         if data.shape[-1]==3:
             for i in range(n_imgs):
-                # R = data[i,:,:,0]
                 img = data[i,:,:,:]
-                data[i,:,:,:] = ((img - np.min(img))*1)/(np.max(img)-np.min(img))
+                data[i,:,:,:] = ((img - np.min(img)) * 1 / ((np.max(img) - np.min(img))+epsilon))
 
         elif data.shape[-1]==4:
+            print('it is a  little naive, check it in line 64 seg utils.py')
             for i in range(n_imgs):
-                img = data[i,:,:,:]
-                data[i,:,:,:] = ((img - np.min(img))*1)/(np.max(img)-np.min(img))
-
-        elif data.shape[-1]==3 and len(data.shape)==3:
-            for i in range(n_imgs):
-                # R = data[i,:,:,0]
-                # G = data[i,:,:,1]
-                # B = data[i,:,:,2]
-                data = ((data-np.min(data))*1/(np.max(data)-np.min(data)))
-                # data[:,:,0]= ((R-np.min(R))*1/(np.max(R)-np.min(R)))
-                # data[:, :, 1] = ((G - np.min(G)) * 1 / (np.max(G) - np.min(G)))
-                # data[:, :, 2] = ((B - np.min(B)) * 1 / (np.max(B) - np.min(B)))
-
+                nir = data[i,:,:,-1]
+                nir= ((nir - np.min(nir)) * 1 / ((np.max(nir) - np.min(nir))+epsilon))
+                img = data[i,:,:,0:3]
+                img = ((img - np.min(img)) * 1 / ((np.max(img) - np.min(img))+epsilon))
+                data[i,:,:,0:3] = img
+                data[i,:,:,-1]=nir
         elif data.shape[-1]==2:
+            #normalization according to channels
+            print('check line 70 utils_seg.py')
             for i in range(n_imgs):
                 im = data[i,:,:,0]
                 N = data[i,:,:,-1]
@@ -170,39 +170,42 @@ def normalization_data_01(data):
                 data[i, :, :, -1] = ((N - np.min(N)) * 1 / (np.max(N) - np.min(N)))
             del im, N
 
-        elif data.shape[-1]==1 or len(data.shape)==3:
-            if not len(data.shape)==3:
-                for i in range(n_imgs):
-                    img = data[i, :, :, 0]
-
-                    data[i, :, :, 0] = ((img - np.min(img)) * 1 / (np.max(img) - np.min(img)))
-
-                del img
-            else:
-                for i in range(n_imgs):
-                    img = data[i, :, :]
-
-                    data[i, :, :] = ((img - np.min(img)) * 1 / (np.max(img) - np.min(img)))
-                print("the sahpe of data is only 3 instead of 4 ", data.shape)
-                del img
-
-        print("Data normalized with:", data.shape[-1], "channels")
+        elif data.shape[-1]==1:
+            for i in range(n_imgs):
+                img = data[i, :, :, 0]
+                data[i, :, :, 0] = ((img - np.min(img)) * 1 / ((np.max(img) - np.min(img))+epsilon))
+        else:
+            print("error normalizing line 83")
+        if np.sum(np.isnan(data)) > 0:
+            print('NaN detected after normalization')
+            return 'variable has NaN values'
         return data
 
     else:
-        if data.shape[-1]>3: #  for rgb and Nir data
-            N = data[:, :, -1]
-            RGB = data[:, :, 0:3]
-            # print(np.max(N), " -- ", np.max(RGB), '---', N.shape)
-            N = ((N - np.min(N)) * 1 / ((np.max(N) - np.min(N)) + ep))
-            N = np.expand_dims(N,axis=-1)
-            # print(N.shape)
-            RGB = ((RGB - np.min(RGB)) * 1 / ((np.max(RGB) - np.min(RGB)) + ep))
-            data = np.concatenate([RGB,N],axis=2)
-            # print(data.shape)
+        # for single image (and [RGB,NIR] 4 channel)
+        if np.max(data) ==0 and np.min(data)==0:
+            return data
+        if np.sum(np.isnan(data)) > 0:
+            print('NaN detected before normalization')
+            return 'variable has NaN values'
+        if len(data.shape)==3 and data.shape[-1]==4:
+            nir = data[:, :, -1]
+            nir = ((nir - np.min(nir)) * 1 / ((np.max(nir) - np.min(nir)) + epsilon))
+            img = data[:, :, 0:3]
+            img = ((img - np.min(img)) * 1 / ((np.max(img) - np.min(img)) + epsilon))
+            data[:, :, 0:3] = img
+            data[:, :, -1] = nir
+
+        elif len(data.shape)==3 and data.shape[-1]>4:
+            print('errro not implemented yet')
+            return
         else:
-            data = ((data - np.min(data)) * 1 / (np.max(data) - np.min(data)))
+            data = ((data - np.min(data)) * 1 / ((np.max(data) - np.min(data))+epsilon))
+        if np.sum(np.isnan(data)) > 0:
+            print('NaN detected after normalization')
+            return 'variable has NaN values'
         return data
+
 
 def normalization_data_101(data):
     """
@@ -368,3 +371,75 @@ def psnr(img_pred, img_lab):
         psnr_B = 20 * np.log10(np.max(img_pred[:, :, 2]) / np.sqrt(mse_B))
         return psnr_R, psnr_G, psnr_B
 
+def read_files_list(list_path,dataset_name=None):
+    mfiles = open(list_path)
+    file_names = mfiles.readlines()
+    mfiles.close()
+
+    file_names = [f.strip() for f in file_names]
+    return file_names
+
+def print_info(info_string, quite=False):
+
+    info = '[{0}][INFO]{1}'.format(get_local_time(), info_string)
+    print(colored(info, 'green'))
+
+def print_error(error_string):
+
+    error = '[{0}][ERROR] {1}'.format(get_local_time(), error_string)
+    print (colored(error, 'red'))
+
+def print_warning(warning_string):
+
+    warning = '[{0}][WARNING] {1}'.format(get_local_time(), warning_string)
+
+    print (colored(warning, 'blue'))
+def img_post_processing(img):
+
+    # Adjust Image intensity [0-255]
+
+    width = img.shape[1]
+    height = img.shape[0]
+    R = img[:,:,0]
+    G=img[:,:,1]
+    B=img[:,:,2]
+    R= imadjust(R)
+    G= imadjust(G)
+    B= imadjust(B)
+    # ***White balance***
+    rgb_med = [np.mean(R), np.mean(G), np.mean(B)]
+    rgb_scale = np.max(rgb_med)/rgb_med
+    # Scale each color channel, to have the same median.
+    R = R*rgb_scale[0]
+    G = G*rgb_scale[1]
+    B = B * rgb_scale[2]
+
+    # ***restore bayer mosaic BGGR***
+    I =np.zeros((height*2,width*2))
+    I[0:height*2:2, 0:width*2:2] = B
+    I[0:height* 2:2, 1:width* 2:2] = G
+    I[1:height* 2:2, 1:width* 2:2] = R
+    # image interpolation
+    T = cv2.resize(G, (2*width,2*height),interpolation=cv2.INTER_CUBIC)
+    I[1:height * 2:2, 0:width * 2:2] = T[1:height * 2:2, 0:width * 2:2]
+    print ("image interpolation ", T.shape)
+
+    I =  np.clip(I,0, 1)
+    # **gamma correction**
+    gamma = 0.6060
+    I = I**gamma
+    I = np.round(I*255)
+    ##print ("**** ", I[27,27])
+    I= np.uint8(I)
+
+    RGB = cv2.demosaicing(I, cv2.COLOR_BayerBG2RGB_VNG)
+    img = cv2.resize(RGB, (width,height),interpolation=cv2.INTER_CUBIC)
+    return img
+
+def imadjust(iChannel):
+    iChannel = np.uint8(iChannel*255)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    imCha = clahe.apply(iChannel)
+
+    imCha = np.float32(imCha)/255
+    return imCha
