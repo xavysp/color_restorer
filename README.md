@@ -69,10 +69,10 @@ Once your dataset is downloaded please go to [train.py](https://github.com/xavys
     else:
       tf.app.flags.DEFINE_string('dataset_dir', '/opt/dataset', """The default path to the patches dataset""")
       
- When *use_base_dir* is True, it means the dataset should be initialized with
+ Set *use_base_dir* as True (now is False), it means the dataset should be initialized with
  the base directory (The whole directory where omsiv have uncompressed), 
  for example, if the omsiv is into color_restorer/dataset, the dataset_dir
- have to be 'dataset' and if it is in Download dataset_dir='/home/user_name/Downloads'
+ have to be dataset_dir='dataset' and if it is in Download dataset_dir='/home/user_name/Downloads'
 
 
 ## Requirements
