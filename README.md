@@ -61,15 +61,18 @@ the [dataset for training](https://drive.google.com/open?id=1bNYC4NF3uJa9Sig5VCp
 Please, before download the OMSIV dataset visit this [page](https://xavysp.github.io/ssmid-dataset)
 
 #### Dataset managing
-Once your dataset is downloaded please go to train.py
-
-https://github.com/xavysp/color_restorer/blob/c9462606e21ba950c5baa01f663cf63923282e16/train.py#L45-L49
+Once your dataset is downloaded please go to [train.py](https://github.com/xavysp/color_restorer/blob/c9462606e21ba950c5baa01f663cf63923282e16/train.py#L45-L49)
 
     tf.app.flags.DEFINE_bool('use_base_dir', False, """True when you are going to put the base directory of OMSIV dataset""")
     if FLAGS.use_base_bir:
       tf.app.flags.DEFINE_string('dataset_dir', 'put your base dataset directory', """example:dataset""")
     else:
       tf.app.flags.DEFINE_string('dataset_dir', '/opt/dataset', """The default path to the patches dataset""")
+      
+ When *use_base_dir* is True, it means the dataset should be initialized with
+ the base directory (The whole directory where omsiv have uncompressed), 
+ for example, if the omsiv is into color_restorer/dataset, the dataset_dir
+ have to be 'dataset' and if it is in Download dataset_dir='/home/user_name/Downloads'
 
 
 ## Requirements
