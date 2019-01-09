@@ -65,6 +65,12 @@ Once your dataset is downloaded please go to train.py
 
 https://github.com/xavysp/color_restorer/blob/c9462606e21ba950c5baa01f663cf63923282e16/train.py#L45-L49
 
+ tf.app.flags.DEFINE_bool('use_base_dir', False, """True when you are going to put the base directory of OMSIV dataset""")
+ if FLAGS.use_base_bir:
+     tf.app.flags.DEFINE_string('dataset_dir', 'put your base dataset directory', """example:dataset""")
+ else:
+ tf.app.flags.DEFINE_string('dataset_dir', '/opt/dataset', """The default path to the patches dataset""")
+
 
 ## Requirements
 
