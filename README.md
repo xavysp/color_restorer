@@ -1,6 +1,6 @@
 # CDNet and ENDENet
 ```diff
-- We are updating the repo, just give us a couple a days :)
+- We are updating the repo, just give us a couple of days :)
 ```
 
 A python implemenation of [Wide-Band Color Imagery Restoration for RGB-NIR Single Sensor Images](http://www.mdpi.com/1424-8220/18/7/2059)
@@ -52,9 +52,17 @@ Two different CNN-based architectures are proposed.
 All code was developed and tested on Ubuntu 16.04 with Python 3.5 and Tensorflow 1.8
 
 Before running the code, you need to download 
+
+**(old)**
 the [dataset for training](https://drive.google.com/open?id=1bNYC4NF3uJa9Sig5VCpDYx3pLKcZCYbm)
  and [dataset for testing](https://drive.google.com/open?id=1otfV1gg7NdqesJnpmBPvNBrcFRFJKi7s).
- 
+
+**(updated)**
+Please, before download the OMSIV dataset visit this [page](https://xavysp.github.io/ssmid-dataset)
+
+#### Dataset managing
+Once your dataset is downloaded 
+
 
 ## Requirements
 

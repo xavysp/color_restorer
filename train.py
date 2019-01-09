@@ -42,7 +42,11 @@ tf.app.flags.DEFINE_integer('num_epochs', 7001,"""The number of iterations durin
 tf.app.flags.DEFINE_float('margin', 1.0,"""The margin value for the loss function""")
 tf.app.flags.DEFINE_float('learning_rate', 1e-4,"""The learning rate for the SGD optimization""")
 tf.app.flags.DEFINE_float('weight_decay', 0.0002, """Set the weight decay""")
-tf.app.flags.DEFINE_string('dataset_dir', '/opt/dataset', """The default path to the patches dataset""")
+tf.app.flags.DEFINE_bool('use_base_dir', False, """True when you are going to put the base directory of OMSIV dataset""")
+if FLAGS.use_base_bir:
+    tf.app.flags.DEFINE_string('dataset_dir', 'put your base dataset directory', """example:dataset""")
+else:
+    tf.app.flags.DEFINE_string('dataset_dir', '/opt/dataset', """The default path to the patches dataset""")
 tf.app.flags.DEFINE_string('train_list', 'train_list.txt', """File which contian the training data""")
 tf.app.flags.DEFINE_string('test_list', 'test_list.txt', """File which contain the testing data""")
 tf.app.flags.DEFINE_string('gpu_id', '0',"""The default GPU id to use""")
