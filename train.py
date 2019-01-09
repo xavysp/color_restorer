@@ -32,7 +32,7 @@ tf.app.flags.DEFINE_integer('image_size', 192,"""The size of the images to proce
 tf.app.flags.DEFINE_string("model_name",'ENDENet',"Choise one of [CDNet, ENDENet]")
 tf.app.flags.DEFINE_integer('num_channels', 3,"""The number of channels in the images to process""")
 tf.app.flags.DEFINE_integer('batch_size', 128,"""The size of the mini-batch""")
-tf.app.flags.DEFINE_integer('num_epochs', 3001,"""The number of iterations during the training""")
+tf.app.flags.DEFINE_integer('num_epochs', 5001,"""The number of iterations during the training""")
 tf.app.flags.DEFINE_float('margin', 1.0,"""The margin value for the loss function""")
 tf.app.flags.DEFINE_float('learning_rate', 1e-4,"""The learning rate for the SGD optimization""")
 tf.app.flags.DEFINE_string('dataset_dir', '/opt/dataset', """The default path to the patches dataset""")
@@ -43,6 +43,7 @@ tf.app.flags.DEFINE_string('gpu_id', '0',"""The default GPU id to use""")
 tf.app.flags.DEFINE_string('is_training', 'False',"""training or testing [True or False]""")
 tf.app.flags.DEFINE_string('prev_train_dir', 'checkpoints',"""training or testing [True or False]""")
 tf.app.flags.DEFINE_string('optimizer', 'adam',"""training or testing [adam or momentum]""")
+tf.app.flas.D
 
 pp = pprint.PrettyPrinter()
 

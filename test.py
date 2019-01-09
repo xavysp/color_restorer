@@ -12,7 +12,8 @@ import tensorflow as tf
 import tensorlayer as tl
 import sys
 import os
-import cv2
+import cv2 as cv
+import h5py
 
 # from tensorlayer.layers import *
 
@@ -24,7 +25,8 @@ from utls import (read_dataset_h5,
                    normalization_data_01,
                    normalization_data_0255,
                    mse, ssim_psnr,
-                   save_results_h5)
+                   save_results_h5,
+                  read_dataset_h5)
 from models.cdent import net as CDNet
 from models.endenet import net as ENDENet
 
@@ -32,14 +34,14 @@ from models.endenet import net as ENDENet
 FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_integer('image_size', 192,"""The size of the images to process""")
-tf.app.flags.DEFINE_string("model_name",'ENDENet',"Choise one of [CDNet, ENDENet]")
+tf.app.flags.DEFINE_string("model_name",'CDNet',"Choise one of [CDNet, ENDENet]")
 tf.app.flags.DEFINE_integer('num_channels', 3,"""The number of channels in the images to process""")
 tf.app.flags.DEFINE_integer('batch_size', 128,"""The size of the mini-batch""")
 tf.app.flags.DEFINE_integer('num_epochs', 3001,"""The number of iterations during the training""")
 tf.app.flags.DEFINE_float('margin', 1.0,"""The margin value for the loss function""")
 tf.app.flags.DEFINE_float('learning_rate', 1e-4,"""The learning rate for the SGD optimization""")
-tf.app.flags.DEFINE_string('dataset_dir', '/opt/dataset', """The default path to the patches dataset""")
-tf.app.flags.DEFINE_string('dataset_name', 'omsiv', """Dataset used by nir_cleaner choice [omsiv or ssomsi]""")
+tf.app.flags.DEFINE_string('dataset_dir', '/opt/2kiss/un_rgbn', """The default path to the patches dataset""")
+tf.app.flags.DEFINE_string('dataset_name', 'ssmihd', """Dataset used by nir_cleaner choice [omsiv, ssmihd, ssomsi]""")
 tf.app.flags.DEFINE_string('train_file', 'OMSIV_train_192.h5', """dataset choice:[OMSIV_train_192.h5 or SSOMSI_train_192.h5]""")
 tf.app.flags.DEFINE_string('test_file', 'OMSIV_test_192.h5', """dataset choice: [OMSIV_test_192.h5 /SSOMSI_test_192.h5]""")
 tf.app.flags.DEFINE_string('gpu_id', '0',"""The default GPU id to use""")
@@ -70,18 +72,25 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
             del data, label
 
         elif FLAGS.is_image=="True": # for testing a single image
-            img_dir = os.path.join(FLAGS.dataset_dir,
+            if FLAGS.dataset_name=='ssmihd':
+                sample_data = 'dataset/RGBN_001.h5'
+                list4test = os.listdir(FLAGS.dataset_dir)
+                list4test.sort()
+                data, label, test = read_dataset_h5(sample_data)
+                data = normalization_data_01(data)
+            else:
+                img_dir = os.path.join(FLAGS.dataset_dir,
                                        os.path.join(FLAGS.dataset_name, 'test'))
-            dataset_path = os.path.join(img_dir, 'OMSIV_raw_img.h5')
-            data, label = read_dataset_h5(dataset_path)
+                dataset_path = os.path.join(img_dir, 'OMSIV_raw_img.h5')
+                data, label, test = read_dataset_h5(dataset_path)
+                data = normalization_data_01(data)
+                label = normalization_data_01(label)
 
-            data = normalization_data_01(data)
-            label = normalization_data_01(label)
             X = data[:, :, 0:3]
-            Y = label[:, ...]
+            # Y = label[:, ...]
             X=np.expand_dims(X,axis=0)
-            Y=np.expand_dims(Y,axis=0)
-            print("Y size: ", Y.shape)
+            # Y=np.expand_dims(Y,axis=0)
+            # print("Y size: ", Y.shape)
             print("X size: ", X.shape)
             del data, label
         else:
@@ -118,19 +127,27 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
                            save_dir=checkpoint_dir)
         n = X.shape[0] // BATCH_SIZE
         for i in range(n):
-            pred = sess.run(Y_hat,{RGBN:X})
+            if FLAGS.dataset_name=='ssmihd':
+                pred = sess.run(Y_hat, {RGBN: X})
+            else:
+                pred = sess.run(Y_hat,{RGBN:X})
 
-        pred = normalization_data_01(pred)
+
 
         if FLAGS.is_image=="True":
             img = np.squeeze(pred)
+            pred = img
+            img = normalization_data_01(img)
+
             img = img**0.4040
             img = np.uint8(img*255)
-            cv2.imshow('random_result', img)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
-            pred_path = '/opt/dataset/omsiv/result/'+FLAGS.model_name+'_resImg.h5'
-            save_results_h5(pred_path,pred, Y,X)
+            cv.imshow('random_result', img)
+            cv.waitKey(0)
+            cv.destroyAllWindows()
+            pred_path = 'dataset/'+FLAGS.model_name+'_resImg.h5'
+            X_ = np.squeeze(X)
+            save_results_h5(pred_path,pred,X_)
+            # save_results_h5(pred_path,pred, Y,X)
 
         else:
 
@@ -138,9 +155,9 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
             img = pred[n,...]
             img = img**0.4040
             img = np.uint8(img*255)
-            cv2.imshow('random_result', img)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            cv.imshow('random_result', img)
+            cv.waitKey(0)
+            cv.destroyAllWindows()
             pred_path = '/opt/dataset/omsiv/result/'+FLAGS.model_name+'_res.h5'
             save_results_h5(pred_path,pred, Y,X)
 

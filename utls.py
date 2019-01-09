@@ -22,30 +22,59 @@ import tensorflow as tf
 FLAGS = tf.app.flags.FLAGS
 
 
-def read_dataset_h5(path,three_variables=False):
+def read_dataset_h5(path):
     """
     Read .h5 file format data h5py <<.File>>
     :param path:file path of desired file
-    :return: data -> contain images data for training;
+    :return: dataset -> contain images data for training;
     label -> contain  training label values (ground truth)
     """
-    if not three_variables:
-
-        with h5py.File(path, 'r') as hf:
-            # choice = True  # write
-            data = np.array(hf.get('data'))
-            label = np.array(hf.get('label'))
-            print("Data opened from: ", path)
-            return data, label
-    else:
-        with h5py.File(path, 'r') as hf:
-            # choice = True  # write
+    with h5py.File(path, 'r') as hf:
+        n_variables = len(list(hf.keys()))
+        # choice = True  # write
+        if n_variables==3:
             data = np.array(hf.get('data'))
             label = np.array(hf.get('label'))
             test = np.array(hf.get('test'))
-            print("Data opened from: ", path)
-            return data, label, test
+        elif n_variables==2:
 
+            data = np.array(hf.get('data'))
+            label = np.array(hf.get('label'))
+            test=None
+        elif n_variables == 1:
+            data = np.array(hf.get('data'))
+            label=None
+            test=None
+        else:
+            data = None
+            label = None
+            test = None
+            print("Error reading path: ",path)
+
+        print(n_variables, " vars opened from: ", path)
+        return data, label, test
+
+
+def save_results_h5(savepath,data, label, test = None, result_name=None, label_name=None):
+    if result_name==None or label_name==None:
+        if np.any(test == None):
+
+            with h5py.File(savepath, 'w') as hf:
+                hf.create_dataset('data', data=data)
+                hf.create_dataset('label', data=label)
+                print("Data [", data.shape, "and label ", label.shape, "] saved in: ", savepath)
+        else:
+            with h5py.File(savepath, 'w') as hf:
+                hf.create_dataset('data', data=data)
+                hf.create_dataset('label', data=label)
+                hf.create_dataset('test', data=test)
+                print("Data [", data.shape, ", label ", label.shape, "and test ", test.shape,"] saved in: ", savepath)
+
+    else:
+        with h5py.File(savepath, 'w') as hf:
+            hf.create_dataset(result_name, data=data)
+            hf.create_dataset(label_name, data=label)
+            print(result_name, "[", data.shape, " and ", label_name, label.shape, "] saved in: ", savepath)
 
 def normalization_data_0255(data):
     """
@@ -58,15 +87,20 @@ def normalization_data_0255(data):
         n_imgs = data.shape[0]
         # data = np.float32(data)
         if data.shape[-1]==3 and len(data.shape)==3:
-            # for i in range(n_imgs):
-                #
-                # R = data[i,:,:,0]
-                # G = data[i,:,:,1]
-                # B = data[i,:,:,2]
-                # data[i,:,:,0]= ((R-np.min(R))*255/(np.max(R)-np.min(R)))
-                # data[i, :, :, 1] = ((G - np.min(G)) * 255 / (np.max(G) - np.min(G)))
+
             data = ((data - np.min(data)) * 255 / ((np.max(data) - np.min(data))+ep))
             # data = ((data - np.min(data)) * 254 / (np.max(data) - np.min(data)))+1
+
+        elif data.shape[-1] == 4 and len(data.shape) == 3:
+            N = data[:, :, -1]
+            RGB = data[:, :, 0:3]
+            print(np.max(N), " -- ", np.max(RGB), '---', N.shape)
+            N = ((N - np.min(N)) * 255 / ((np.max(N) - np.min(N)) + ep))
+            N = np.expand_dims(N,axis=-1)
+            print(N.shape)
+            RGB = ((RGB - np.min(RGB)) * 255 / ((np.max(RGB) - np.min(RGB)) + ep))
+            data = np.concatenate([RGB,N],axis=2)
+            print(data.shape)
 
         elif data.shape[-1]==3 and len(data.shape)==4:
             for i in range(n_imgs):
@@ -103,6 +137,7 @@ def normalization_data_01(data):
     :param data:
     :return:
     """
+    ep = 0.000001
     if not (len(data.shape)<=3):
         n_imgs = data.shape[0]
         data = np.float32(data)
@@ -155,7 +190,18 @@ def normalization_data_01(data):
         return data
 
     else:
-        data = ((data - np.min(data)) * 1 / (np.max(data) - np.min(data)))
+        if data.shape[-1]>3: #  for rgb and Nir data
+            N = data[:, :, -1]
+            RGB = data[:, :, 0:3]
+            # print(np.max(N), " -- ", np.max(RGB), '---', N.shape)
+            N = ((N - np.min(N)) * 1 / ((np.max(N) - np.min(N)) + ep))
+            N = np.expand_dims(N,axis=-1)
+            # print(N.shape)
+            RGB = ((RGB - np.min(RGB)) * 1 / ((np.max(RGB) - np.min(RGB)) + ep))
+            data = np.concatenate([RGB,N],axis=2)
+            # print(data.shape)
+        else:
+            data = ((data - np.min(data)) * 1 / (np.max(data) - np.min(data)))
         return data
 
 def normalization_data_101(data):
@@ -321,28 +367,4 @@ def psnr(img_pred, img_lab):
         psnr_G = 20 * np.log10(np.max(img_pred[:, :, 1]) / np.sqrt(mse_G))
         psnr_B = 20 * np.log10(np.max(img_pred[:, :, 2]) / np.sqrt(mse_B))
         return psnr_R, psnr_G, psnr_B
-
-
-def save_results_h5(savepath,data, label, test = None, result_name=None, label_name=None):
-    if result_name==None or label_name==None:
-        if np.any(test == None):
-
-            with h5py.File(savepath, 'w') as hf:
-                hf.create_dataset('data', data=data)
-                hf.create_dataset('label', data=label)
-                print("Data [", data.shape, "and label ", label.shape, "] saved in: ", savepath)
-        else:
-            with h5py.File(savepath, 'w') as hf:
-                hf.create_dataset('data', data=data)
-                hf.create_dataset('label', data=label)
-                hf.create_dataset('test', data=test)
-                print("Data [", data.shape, ", label ", label.shape, "and test ", test.shape,"] saved in: ", savepath)
-
-
-    else:
-        with h5py.File(savepath, 'w') as hf:
-            hf.create_dataset(result_name, data=data)
-            hf.create_dataset(label_name, data=label)
-            print(result_name, "[", data.shape, " and ", label_name, label.shape, "] saved in: ", savepath)
-
 
