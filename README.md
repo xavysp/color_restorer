@@ -1,6 +1,6 @@
 # CDNet and ENDENet
 ```diff
-- we are updating our repo
+- We are updating the repo, just give us a couple a days :)
 ```
 
 A python implemenation of [Wide-Band Color Imagery Restoration for RGB-NIR Single Sensor Images](http://www.mdpi.com/1424-8220/18/7/2059)
