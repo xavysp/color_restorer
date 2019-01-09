@@ -61,7 +61,9 @@ the [dataset for training](https://drive.google.com/open?id=1bNYC4NF3uJa9Sig5VCp
 Please, before download the OMSIV dataset visit this [page](https://xavysp.github.io/ssmid-dataset)
 
 #### Dataset managing
-Once your dataset is downloaded 
+Once your dataset is downloaded please go to train.py
+
+https://github.com/xavysp/color_restorer/blob/c9462606e21ba950c5baa01f663cf63923282e16/train.py#L45-L49
 
 
 ## Requirements
