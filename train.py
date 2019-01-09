@@ -46,7 +46,7 @@ tf.app.flags.DEFINE_bool('use_base_dir', False, """True when you are going to pu
 if FLAGS.use_base_bir:
     tf.app.flags.DEFINE_string('dataset_dir', 'put your base dataset directory', """example:dataset""")
 else:
-    tf.app.flags.DEFINE_string('dataset_dir', '/opt/dataset', """The default path to the patches dataset""")
+    tf.app.flags.DEFINE_string('dataset_dir', '', """The default  dataset path, my setting""")
 tf.app.flags.DEFINE_string('train_list', 'train_list.txt', """File which contian the training data""")
 tf.app.flags.DEFINE_string('test_list', 'test_list.txt', """File which contain the testing data""")
 tf.app.flags.DEFINE_string('gpu_id', '0',"""The default GPU id to use""")
@@ -286,7 +286,7 @@ if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
                 tmp_im = np.concatenate((normalization_data_0255(y_hatv ** 0.4040),
                                          normalization_data_0255(y_val ** 0.4040)))
 
-                # Valid visualization
+                # Valid... visualization
                 plt.title("Epoch:" + str(epoch + 1) + " Loss:" + '%.5f' % np.float32(l_val) + "Validating")
                 plt.imshow(np.uint8(tmp_im))
                 plt.draw()
