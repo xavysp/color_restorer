@@ -1,6 +1,6 @@
 # CDNet and ENDENet
 
-<span style="color:blue">some *This is Blue italic.* text</span>
+**we are updating our repo**
 
 A python implemenation of [Wide-Band Color Imagery Restoration for RGB-NIR Single Sensor Images](http://www.mdpi.com/1424-8220/18/7/2059)
 using Tensorflow.
