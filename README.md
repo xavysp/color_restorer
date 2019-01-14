@@ -53,11 +53,11 @@ All code was developed and tested on Ubuntu 16.04 with Python 3.5 and Tensorflow
 
 Before running the code, you need to download 
 
-**(old)**
+**(old dataset)**
 the [dataset for training](https://drive.google.com/open?id=1bNYC4NF3uJa9Sig5VCpDYx3pLKcZCYbm)
  and [dataset for testing](https://drive.google.com/open?id=1otfV1gg7NdqesJnpmBPvNBrcFRFJKi7s).
 
-**(updated)**
+**(updated dataset)**
 Please, before download the OMSIV dataset visit this [page](https://xavysp.github.io/ssmid-dataset)
 
 #### Dataset managing
