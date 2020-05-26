@@ -35,7 +35,7 @@ parser.add_argument("--model_name",type=str, default='CDNet',help="Choise one of
 parser.add_argument('--num_channels',type=int, default= 3,help="The number of channels in the images to process")
 parser.add_argument('--batch_size',type=int, default= 8,help="The size of the mini-batch")
 
-parser.add_argument('--num_epochs',type=int, default= 10,help="The number of iterations during the training")
+parser.add_argument('--num_epochs',type=int, default= 100,help="The number of iterations during the training")
 parser.add_argument('--margin', type=float, default=1.0,help="The margin value for the loss function")
 parser.add_argument('--lr', type=float, default=1e-4,help="The learning rate for the SGD optimization")
 parser.add_argument('--weight_decay', type=float, default=0.0002, help="Set the weight decay")
@@ -46,7 +46,7 @@ parser.add_argument('--train_list', type=str, default='train_list.txt', help="Fi
 parser.add_argument('--test_list', type=str, default='test_list.txt', help="File which contain the testing data")
 parser.add_argument('--gpu_id', type=str, default='0',help="The default GPU id to use")
 parser.add_argument('--model_state', type=str, default='train',help="training or testing [train, test, None]")
-parser.add_argument('--prev_train_dir', type=str, default='checkpoints',help="training or testing [True or False]")
+parser.add_argument('--ckpt_dir', type=str, default='checkpoints',help="training or testing [True or False]")
 parser.add_argument('--task',type=str, default= 'restorations',help="training or testing [restoration,superpixels,edges]")
 parser.add_argument('--use_nir',type=bool, default=False,help="True for using the NIR channel")
 
@@ -90,7 +90,19 @@ def train():
             running_mode = 'train'
             data4training = DataLoader(
                 data_name=arg.dataset_name,arg=arg)
-
+            # define model and callbacks
+            model_dir = arg.model_name.lower()+'2'+arg.dataset_name
+            ckpnt_dir = os.path.join(arg.ckpt_dir,model_dir)
+            os.makedirs(ckpnt_dir,exist_ok=True)
+            log_dir = os.path.join('logs',model_dir)
+            my_callbacks = [
+                tfk.callbacks.ModelCheckpoint(
+                    os.path.join(ckpnt_dir,'saved_weights.h5'), monitor='train_loss',# os.path.join(ckpnt,saved_weights.h5)
+                    save_weights_only=True, mode='auto',save_freq='epoch'),
+                tfk.callbacks.TensorBoard(
+                    log_dir,histogram_freq=0,write_graph=True,
+                    profile_batch=2)
+            ]
             my_model = CDENT()
 
             loss_mse = tfk.losses.mean_squared_error
@@ -103,8 +115,8 @@ def train():
             # my_model.fit_generator(
             #     generator=data4training,use_multiprocessing=True,
             #     workers=6,epochs=arg.num_epochs)
-            my_model.fit(data4training, epochs=arg.num_epochs)
-
+            my_model.fit(data4training, epochs=arg.num_epochs,callbacks=my_callbacks)
+            my_model.summary()
             print('oh oh ')
 
         else:
