@@ -109,9 +109,9 @@ def data_augmentation(x1,y1,x2,y2, batch_size=None,img_size=None, nir=False):
 
 def data_parser(args, files_path=None, indx1=None, indx2=None,batch_size=None):
 
-    if args.model_state=='Train' or args.model_state=='train':
+    if args.model_state.lower()=='train':
 
-        if args.dataset_name=="SSMIHD" or args.dataset_name=="ssmihd":
+        if args.dataset_name.lower()=="biped":
             # reading data and normalization in a range of 0-1
             x1 =h5_reader(files_path[indx1][0])
             x1=normalization_data_01(x1[0])

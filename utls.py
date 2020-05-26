@@ -2,7 +2,7 @@
 
 """
 
-# import os
+import os, time
 # import glob
 import h5py
 from termcolor import colored
@@ -12,11 +12,10 @@ from skimage.measure import compare_ssim as ssim
 import numpy as np
 import cv2
 
-import tensorflow as tf
-
-
-FLAGS = tf.app.flags.FLAGS
-
+def cv_imshow(img=None,title="on_title"):
+    cv2.imshow(title,img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 def h5_reader(path):
     """
@@ -207,56 +206,20 @@ def normalization_data_01(data):
         return data
 
 
-def normalization_data_101(data):
+def image_normalization(img, img_min=0, img_max=255):
+    """ Image normalization given a minimum and maximum
+    This is a typical image normalization function
+    where the minimum and maximum of the image is needed
+    source: https://en.wikipedia.org/wiki/Normalization_(image_processing)
+    :param img: an image could be gray scale or color
+    :param img_min:  for default is 0
+    :param img_max: for default is 255
+    :return: a normalized image given a scale
     """
-    data normalization in 0 till 1 range
-    :param data:
-    :return:
-    """
-    if not (len(data.shape)<=3):
-        n_imgs = data.shape[0]
-        data = np.float32(data)
-        if data.shape[-1]==3:
-            for i in range(n_imgs):
-                # R = data[i,:,:,0]
-                img = data[i,:,:,:]
-                data[i,:,:,:] = (((img - np.min(img))*1)-1)/(np.max(img)-np.min(img))
-
-        elif data.shape[-1]==4:
-            for i in range(n_imgs):
-                img = data[i,:,:,:]
-                data[i, :, :, :] = (((img - np.min(img)) * 1) - 1) / (np.max(img) - np.min(img))
-
-        elif data.shape[-1]==2:
-            for i in range(n_imgs):
-                im = data[i,:,:,0]
-                N = data[i,:,:,-1]
-                data[i,:,:,0]= ((im-np.min(im))*1/(np.max(im)-np.min(im)))
-                data[i, :, :, -1] = ((N - np.min(N)) * 1 / (np.max(N) - np.min(N)))
-            del im, N
-
-        elif data.shape[-1]==1 or len(data.shape)==3:
-            if not len(data.shape)==3:
-                for i in range(n_imgs):
-                    img = data[i, :, :, 0]
-
-                    data[i, :, :, 0] = ((img - np.min(img)) * 1 / (np.max(img) - np.min(img)))
-
-                del img
-            else:
-                for i in range(n_imgs):
-                    img = data[i, :, :]
-
-                    data[i, :, :] = ((img - np.min(img)) * 1 / (np.max(img) - np.min(img)))
-                print("the shape of data is only 3 instead of 4 ", data.shape)
-                del img
-
-        print("Data normalized with:", data.shape[-1], "channels")
-        return data
-
-    else:
-        data = (((data - np.min(data)) * 1)-1) / (np.max(data) - np.min(data))
-        return data
+    img = np.float32(img)
+    epsilon=1e-12 # whenever an inconsistent image
+    img = (img-np.min(img))*(img_max-img_min)/((np.max(img)-np.min(img))+epsilon)+img_min
+    return img
 
 
 def ssim_psnr(img_pred, img_lab):
@@ -381,17 +344,17 @@ def read_files_list(list_path,dataset_name=None):
 
 def print_info(info_string, quite=False):
 
-    info = '[{0}][INFO]{1}'.format(get_local_time(), info_string)
+    info = '[{0}][INFO]{1}'.format(time.time(), info_string)
     print(colored(info, 'green'))
 
 def print_error(error_string):
 
-    error = '[{0}][ERROR] {1}'.format(get_local_time(), error_string)
+    error = '[{0}][ERROR] {1}'.format(time.time(), error_string)
     print (colored(error, 'red'))
 
 def print_warning(warning_string):
 
-    warning = '[{0}][WARNING] {1}'.format(get_local_time(), warning_string)
+    warning = '[{0}][WARNING] {1}'.format(time.time(), warning_string)
 
     print (colored(warning, 'blue'))
 def img_post_processing(img):

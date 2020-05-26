@@ -28,7 +28,7 @@ from utls import (h5_reader,
                    h5_writer)
 from utilities.data_manager import *
 
-from models.cdent import net as CDNet
+from models.cdentOLD import net as CDNet
 from models.endenet import net as ENDENet
 
 

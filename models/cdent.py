@@ -1,40 +1,58 @@
-"""
-
-"""
-import tensorflow as tf
-import tensorflow.contrib.layers as lays
 
 
-def net(ls, input, reuse=False, train=False):
+import tensorflow.keras as tfk
 
-    with tf.variable_scope("CDNet", reuse=reuse):
-        net = tf.layers.conv2d(input, ls[1], [3, 3], strides=(1, 1), padding='SAME',
-                           activation=tf.nn.relu, trainable=train) # n_batchx192x192x32
-        print("conv1 ", net)
 
-        net = lays.conv2d(net, ls[2], [3, 3], stride=(1, 1), padding="SAME",activation_fn=tf.nn.relu,
-                          weights_initializer=lays.xavier_initializer(uniform=True),
-                          trainable=train) #n_batchx192x192x64
-        print("conv2 ", net)
+l2 = tfk.regularizers.l2
+class ConvLayer(tfk.Model):
+    def __init__(self, n_filters=32,k_size=(3,3),
+                 strides=(1,1),weight_decay=1e4):
+        super(ConvLayer, self).__init__()
 
-        net1 = lays.conv2d_transpose(net, ls[3], [3, 3], stride=(1, 1), padding="SAME",
-                                     activation_fn=tf.nn.relu, weights_initializer=lays.xavier_initializer(uniform=True),
-                                     trainable=train) # n_batchx192x192x32
-        print("deconv1 ", net1)
+        self.conv1 = tfk.layers.Conv2D(
+            filters=n_filters, kernel_size=k_size,strides=strides,
+            padding='same', kernel_initializer='glorot_uniform',
+            activation='relu', kernel_regularizer=l2(weight_decay))
 
-        net1 = lays.conv2d_transpose(net1, ls[4], [3, 3], stride=(1, 1), padding='SAME',
-                                     activation_fn=tf.nn.relu, weights_initializer=lays.xavier_initializer(uniform=True),
-                                     trainable=train)  # n_batchx192x192x64
-        print("deconv2 ", net1)
+    def call(self, x, training=False):
+        output = self.conv1(x)
+        return output
 
-        net1 = lays.conv2d_transpose(net1, ls[5], [3, 3], stride=(1, 1), padding='SAME',
-                                     activation_fn=tf.nn.relu, weights_initializer=lays.xavier_initializer(uniform=True),
-                                     trainable=train)  # n_batchx192x192x32
-        print("deconv3 ", net1)  # ls[6]
+class DconvLayer(tfk.Model):
+    def __init__(self, n_filters=32,k_size=(3,3),
+                 strides=(1,1),act='relu',weight_decay = 1e4):
+        super(DconvLayer,self).__init__()
 
-        net1 = lays.conv2d_transpose(net1, ls[6], [1, 1], stride=(1, 1), padding='SAME',
-                                     weights_initializer=lays.xavier_initializer(uniform=True),
-                                     trainable=train)  # n_batchx192x192x3
-        print("deconv4 ", net1)
+        self.dconv1 = tfk.layers.Conv2DTranspose(
+            filters=n_filters, kernel_size=k_size,strides=strides,
+            activation=act,padding='same',kernel_initializer='glorot_uniform',
+            kernel_regularizer=l2(weight_decay)
+        )
 
-    return net1, net
+    def call(self, x, training=False):
+        output = self.dconv1(x)
+        return output
+
+class CDENT(tfk.Model):
+    def __init__(self):
+        super(CDENT,self).__init__()
+
+        self.conv1 = ConvLayer(32,(3,3),(1,1))
+        self.conv2 = ConvLayer(64,(3,3),(1,1))
+        self.dconv1 = DconvLayer(32,(3,3),(1,1))
+        self.dconv2 = DconvLayer(64,(3,3),(1,1))
+        self.dconv3 = DconvLayer(32,(3,3),(1,1))
+        self.dconv4 = DconvLayer(3,(1,1),(1,1),act=None)
+
+    def call(self,x,training=False):
+
+        output = self.conv1(x)
+        output = self.conv2(output)
+        output = self.dconv1(output)
+        output = self.dconv2(output)
+        output = self.dconv3(output)
+        output = self.dconv4(output)
+
+        return output
+
+
