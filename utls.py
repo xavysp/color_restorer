@@ -76,135 +76,6 @@ def h5_writer(savepath=None,data=None, label=None, test = None, result_name=None
         print('Sorry there is an error, please check our h5_writer() function')
         return
 
-def normalization_data_0255(data):
-    """
-    data normalization in 0 till 1 range
-    :param data:
-    :return:
-    """
-    ep=0.000001
-    if not len(data.shape)==2:
-        n_imgs = data.shape[0]
-        # data = np.float32(data)
-        if data.shape[-1]==3 and len(data.shape)==3:
-
-            data = ((data - np.min(data)) * 255 / ((np.max(data) - np.min(data))+ep))
-            # data = ((data - np.min(data)) * 254 / (np.max(data) - np.min(data)))+1
-
-        elif data.shape[-1] == 4 and len(data.shape) == 3:
-            N = data[:, :, -1]
-            RGB = data[:, :, 0:3]
-            print(np.max(N), " -- ", np.max(RGB), '---', N.shape)
-            N = ((N - np.min(N)) * 255 / ((np.max(N) - np.min(N)) + ep))
-            N = np.expand_dims(N,axis=-1)
-            print(N.shape)
-            RGB = ((RGB - np.min(RGB)) * 255 / ((np.max(RGB) - np.min(RGB)) + ep))
-            data = np.concatenate([RGB,N],axis=2)
-            print(data.shape)
-
-        elif data.shape[-1]==3 and len(data.shape)==4:
-            for i in range(n_imgs):
-                # R = data[i,:,:,0]
-                # G = data[i,:,:,1]
-                # B = data[i,:,:,2]
-                # N = data[i,:,:,3]
-                # data[i,:,:,0]= ((R-np.min(R))*255/(np.max(R)-np.min(R)))
-                # data[i, :, :, 1] = ((G - np.min(G)) * 255 / (np.max(G) - np.min(G)))
-                # data[i, :, :, 2] = ((B - np.min(B)) * 255 / (np.max(B) - np.min(B)))
-                # data[i, :, :, 3] = ((N - np.min(N)) * 255 / (np.max(N) - np.min(N)))
-                img = data[i,...]
-                data[i,:,:,:] = ((img - np.min(img)) * 255 / (np.max(img) - np.min(img)))
-        # print("Data normalized with:", data.shape[-1], "channels")
-        return data
-
-    elif data.shape[-1]==3 and len(data.shape)==3:
-        # R = data[:, :, 0]
-        # G = data[:, :, 1]
-        # B = data[:, :, 2]
-        # data[:, :, 0] = ((R-np.min(R))*255/(np.max(R)-np.min(R)))
-        # data[:, :, 1] = ((G - np.min(G)) * 255 / (np.max(G) - np.min(G)))
-        # data[:, :, 2] = ((B - np.min(B)) * 255 / (np.max(B) - np.min(B)))
-        data = ((data - np.min(data)) * 255 / (np.max(data) - np.min(data)))
-        return data
-    elif len(data.shape)==2:
-        data = ((data-np.min(data))*255/(np.max(data)-np.min(data)))
-        return data
-
-
-def normalization_data_01(data):
-    """
-    data normalization in 0 till 1 range
-    :param data:
-    :return:
-    """
-    epsilon = 1e-12
-    if np.sum(np.isnan(data))>0:
-        print('NaN detected before Normalization')
-        return 'variable has NaN values'
-    if len(data.shape)>3:
-        # data with batch (tensors)
-        n_imgs = data.shape[0]
-        data = np.float32(data)
-        if data.shape[-1]==3:
-            for i in range(n_imgs):
-                img = data[i,:,:,:]
-                data[i,:,:,:] = ((img - np.min(img)) * 1 / ((np.max(img) - np.min(img))+epsilon))
-
-        elif data.shape[-1]==4:
-            print('it is a  little naive, check it in line 64 seg utils.py')
-            for i in range(n_imgs):
-                nir = data[i,:,:,-1]
-                nir= ((nir - np.min(nir)) * 1 / ((np.max(nir) - np.min(nir))+epsilon))
-                img = data[i,:,:,0:3]
-                img = ((img - np.min(img)) * 1 / ((np.max(img) - np.min(img))+epsilon))
-                data[i,:,:,0:3] = img
-                data[i,:,:,-1]=nir
-        elif data.shape[-1]==2:
-            #normalization according to channels
-            print('check line 70 utils_seg.py')
-            for i in range(n_imgs):
-                im = data[i,:,:,0]
-                N = data[i,:,:,-1]
-                data[i,:,:,0]= ((im-np.min(im))*1/(np.max(im)-np.min(im)))
-                data[i, :, :, -1] = ((N - np.min(N)) * 1 / (np.max(N) - np.min(N)))
-            del im, N
-
-        elif data.shape[-1]==1:
-            for i in range(n_imgs):
-                img = data[i, :, :, 0]
-                data[i, :, :, 0] = ((img - np.min(img)) * 1 / ((np.max(img) - np.min(img))+epsilon))
-        else:
-            print("error normalizing line 83")
-        if np.sum(np.isnan(data)) > 0:
-            print('NaN detected after normalization')
-            return 'variable has NaN values'
-        return data
-
-    else:
-        # for single image (and [RGB,NIR] 4 channel)
-        if np.max(data) ==0 and np.min(data)==0:
-            return data
-        if np.sum(np.isnan(data)) > 0:
-            print('NaN detected before normalization')
-            return 'variable has NaN values'
-        if len(data.shape)==3 and data.shape[-1]==4:
-            nir = data[:, :, -1]
-            nir = ((nir - np.min(nir)) * 1 / ((np.max(nir) - np.min(nir)) + epsilon))
-            img = data[:, :, 0:3]
-            img = ((img - np.min(img)) * 1 / ((np.max(img) - np.min(img)) + epsilon))
-            data[:, :, 0:3] = img
-            data[:, :, -1] = nir
-
-        elif len(data.shape)==3 and data.shape[-1]>4:
-            print('errro not implemented yet')
-            return
-        else:
-            data = ((data - np.min(data)) * 1 / ((np.max(data) - np.min(data))+epsilon))
-        if np.sum(np.isnan(data)) > 0:
-            print('NaN detected after normalization')
-            return 'variable has NaN values'
-        return data
-
 
 def image_normalization(img, img_min=0, img_max=255):
     """ Image normalization given a minimum and maximum
@@ -233,7 +104,7 @@ def ssim_psnr(img_pred, img_lab):
     # print("Img_pred ",img_pred.shape)
     # print("Img_lab ", img_lab.shape)
 
-    img_pred = normalization_data_01(img_pred)
+    img_pred = image_normalization(img_pred)
     img_lab = normalization_data_01(img_lab)
 
     img_pred = normalization_data_0255(img_pred)

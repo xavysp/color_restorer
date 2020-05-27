@@ -8,56 +8,60 @@ __email__ = "xsoria@cvc.uab.es / xavysp@gmail.com"
 
 
 import numpy as np
+import tensorflow.keras as tfk
 import tensorflow as tf
-import tensorlayer as tl
+from skimage.measure import compare_psnr,compare_ssim
+
 import sys
 import os
 import cv2 as cv
 import h5py
-
+import platform
 # from tensorlayer.layers import *
 
 import matplotlib.pyplot as plt
-from tqdm import tqdm
+import argparse
 import pprint
 
-from utls import (h5_reader,
-                   normalization_data_01,
-                   normalization_data_0255,
+from utls import (h5_reader,cv_imshow,
+                   image_normalization,
                    mse, ssim_psnr,
                    h5_writer)
 from utilities.data_manager import *
-
-from models.cdentOLD import net as CDNet
+from dataset_manager import DataLoader
+from models.cdent import CDENT
 from models.endenet import net as ENDENet
 
 
-FLAGS = tf.app.flags.FLAGS
+data_dir = '/opt/dataset' if platform.system()=="Linux" else '../../dataset'
+parser = argparse.ArgumentParser(description="CDNet arguments")
 
-tf.app.flags.DEFINE_integer('image_size', 192,"""The size of the images to process""")
-tf.app.flags.DEFINE_string("model_name",'CDNet',"Choise one of [CDNet, ENDENet]")
-tf.app.flags.DEFINE_string('model_state', 'test',"""training or testing [train, test, None]""")
-tf.app.flags.DEFINE_integer('num_channels', 3,"""The number of channels in the images to process""")
-tf.app.flags.DEFINE_integer('batch_size', 16,"""The size of the mini-batch default 32""")
-tf.app.flags.DEFINE_integer('num_epochs', 3001,"""The number of iterations during the training""")
-tf.app.flags.DEFINE_integer('n_test', 100,"""The size of the mini-batch""")
-tf.app.flags.DEFINE_float('margin', 1.0,"""The margin value for the loss function""")
-tf.app.flags.DEFINE_float('learning_rate', 1e-4,"""The learning rate for the SGD optimization""")
-tf.app.flags.DEFINE_string('dataset_dir', '/opt/dataset', """The default path to the patches dataset""")
-tf.app.flags.DEFINE_string('dataset_name', 'ssmihd', """Dataset used by nir_cleaner choice [omsiv or ssomsi]""")
-tf.app.flags.DEFINE_string('train_list', 'train_list.txt', """File which contian the training data""")
-tf.app.flags.DEFINE_string('test_list', 'test_list.txt', """File which contain the testing data""")
-tf.app.flags.DEFINE_string('gpu_id', '0',"""The default GPU id to use""")
-tf.app.flags.DEFINE_bool('is_training', False,"""training or testing [True or False]""")
-tf.app.flags.DEFINE_string('prev_train_dir', 'checkpoints',"""training or testing [True or False]""")
-tf.app.flags.DEFINE_string('optimizer', 'adam',"""training or testing [adam or momentum]""")
-tf.app.flags.DEFINE_bool('is_image', False,"""training or testing [adam or momentum]""")
-tf.app.flags.DEFINE_string('task', 'restorations',"""training or testing [restoration,superpixels,edges]""")
-tf.app.flags.DEFINE_bool('use_nir', False,"""True for using nir in the test and False...""")
-tf.app.flags.DEFINE_bool('use_all_data', True,""" True to use all data training and testing""")
+parser.add_argument('--img_width', type=int,default=580,help="Image width 580")
+parser.add_argument('--img_height', type=int,default=320,help="Image height 320")
+parser.add_argument("--model_name",type=str,default='CDNet',help="CDNet, ENDENet")
+parser.add_argument('--model_state', type=str,default='test',help="[train, test, None]")
+parser.add_argument('--num_channels', type=int, default=3,help="The number of channels in the images to process")
+parser.add_argument('--batch_size', type=int, default=1,help="The size of the mini-batch default 32")
+parser.add_argument('--num_epochs', type=int, default=3001,help="The number of iterations during the training")
+parser.add_argument('--n_test', type=int, default=100,help="The size of the mini-batch")
+parser.add_argument('--margin', type=float, default=1.0,help="The margin value for the loss function")
+parser.add_argument('--lr', type=float, default=1e-4,help="The learning rate for the SGD optimization")
+parser.add_argument('--dataset_dir', type=str, default=data_dir, help="The default path to the patches dataset")
+parser.add_argument('--dataset_name', type=str, default='OMSIV', help="[omsiv or ssomsi]")
+parser.add_argument('--train_list', type=str, default='train_list.txt', help="File which contian the training data")
+parser.add_argument('--test_list', type=str, default='test_list.txt', help="File which contain the testing data")
+parser.add_argument('--gpu_id', type=str, default='0',help="The default GPU id to use")
+parser.add_argument('--is_training', type=bool, default=False,help="training or testing [True or False]")
+parser.add_argument('--ckpt_dir', type=str, default='checkpoints',help="training or testing [True or False]")
+parser.add_argument('--optimizer', type=str, default='adam',help="training or testing [adam or momentum]")
+parser.add_argument('--is_image', type=bool, default=False,help="training or testing [adam or momentum]")
+parser.add_argument('--task', type=str, default='restorations',help="training or testing [restoration,superpixels,edges]")
+parser.add_argument('--use_nir', type=bool, default=False,help="True for using nir in the test and False...")
+parser.add_argument('--use_all_data', type=bool, default=True,help=" True to use all data training and testing")
+
+arg = parser.parse_args()
 
 
-pp = pprint.PrettyPrinter()
 def save_batch_pred(args, Y_hat=None, Y_hat_name=None):
     """
     Given a tensor of images Y_hat, save_batch_pred
@@ -67,10 +71,10 @@ def save_batch_pred(args, Y_hat=None, Y_hat_name=None):
     :param Y_hat_name:
     :return:
     """
-    Yhat_dir = os.path.join(FLAGS.dataset_dir,
-                            os.path.join(FLAGS.dataset_name, FLAGS.task))
+    Yhat_dir = os.path.join(arg.dataset_dir,
+                            os.path.join(arg.dataset_name, arg.task))
     Yhat_dir = os.path.join(Yhat_dir,'Yhat') if args.use_all_data else os.path.join(Yhat_dir,
-                                                        os.path.join(FLAGS.model_state,'Yhat'))
+                                                        os.path.join(arg.model_state,'Yhat'))
     if not os.path.exists(Yhat_dir):
         os.makedirs(Yhat_dir)
 
@@ -86,131 +90,50 @@ def save_batch_pred(args, Y_hat=None, Y_hat_name=None):
         h5_writer(savepath=os.path.join(Yhat_dir, tmp_name), data=np.squeeze(Y_hat))
 
 
-if FLAGS.model_name =="CDNet" or FLAGS.model_name=="ENDENet":
+if arg.model_name =="CDNet" or arg.model_name=="ENDENet":
 
-    if not FLAGS.is_training:
-        running_mode = 'test'
-        pp.pprint(FLAGS.__flags)
-        if FLAGS.dataset_name == "omsiv" and  FLAGS.is_image==False:
-            # opening the test dataset
-            test_list = test_data_loader(FLAGS)
-            n_test = len(test_list)
-            dataset_dir = os.path.join(FLAGS.dataset_dir,
-                                       os.path.join(FLAGS.dataset_name, FLAGS.task))
-            dataset_path = os.path.join(dataset_dir, os.path.join(FLAGS.model_state,'X'))
-            data= h5_reader(os.path.join(dataset_path,test_list[0]))
-            data = data[0]
-            data = normalization_data_01(data)
-            X = data[:, :, 0:3]
-            print("X size: ", X.shape)
-            del data
-        elif (FLAGS.dataset_name == "ssmihd" or FLAGS.dataset_name == "SSMIHD") and  FLAGS.is_image==False:
-            # opening the test dataset
-            test_list = test_data_loader(FLAGS)
-            n_test = len(test_list)
-            dataset_dir = os.path.join(FLAGS.dataset_dir,
-                                       os.path.join(FLAGS.dataset_name, FLAGS.task))
-            dataset_path = os.path.join(dataset_dir,'X') if FLAGS.use_all_data else \
-                os.path.join(dataset_dir,os.path.join(FLAGS.model_state,'X'))
+    if not arg.is_training:
+        data4testing = DataLoader(
+            data_name=arg.dataset_name, arg=arg)
 
-            data = h5_reader(os.path.join(dataset_path, test_list[0]))
-            data = data[0]
-            data = normalization_data_01(data)
-            X = data[:, :, 0:3]
-            print("X size: ", X.shape)
-            del data
+        model_dir = arg.model_name.lower() + '2' + arg.dataset_name
+        res_dir = os.path.join('results',model_dir)
+        os.makedirs(res_dir,exist_ok=True)
+        ckpnt_dir = os.path.join(arg.ckpt_dir,model_dir)
+        ckpnt_path = os.path.join(ckpnt_dir,'saved_weights.h5')
 
-        elif FLAGS.is_image=="True": # for testing a single image
-            if FLAGS.dataset_name=='ssmihd':
-                sample_data = 'dataset/RGBN_001.h5'
-                list4test = os.listdir(FLAGS.dataset_dir)
-                list4test.sort()
-                data, label, test = h5_reader(sample_data)
-                data = normalization_data_01(data)
-            elif FLAGS.dataset_name=='omsiv':
-                dataset_dir = os.path.join(FLAGS.dataset_dir,
-                                           os.path.join(FLAGS.dataset_name, 'test'))
-                dataset_path = os.path.join(dataset_dir, FLAGS.test_file)
-                data, label = h5_reader(dataset_path)
-                data = normalization_data_01(data)
-                label = normalization_data_01(label)
-                X = data[:, :, :, 0:3]
-                Y = label[:, ...]
-                print("Y size: ", Y.shape)
-                print("X size: ", X.shape)
-                del data, label
+        my_model = CDENT()
 
-            X = data[:, :, 0:3]
-            # Y = label[:, ...]
-            X=np.expand_dims(X,axis=0)
-            # Y=np.expand_dims(Y,axis=0)
-            # print("Y size: ", Y.shape)
-            print("X size: ", X.shape)
-            del data, label
-        else:
+        loss_mse = tfk.losses.mean_squared_error
+        optimizer = tfk.optimizers.Adam(learning_rate=arg.lr)
+        my_model.compile(optimizer=optimizer, loss=loss_mse, metrics='mse')
+        input_shape = data4testing.input_shape
+        my_model.build(input_shape=input_shape)
+        my_model.load_weights(filepath=ckpnt_path)
+        # preds = my_model.predict(data4testing)
+        my_model.summary()
+        # evaluation
+        imgs_ssim = []
+        imgs_psnr = []
+        for i,(x,y) in enumerate(data4testing):
+            p = my_model(x)
+            # tmp_shape = data4testing.imgs_shape[i]
+            tmp_name = data4testing.imgs_name[i]
+            p = p.numpy()
+            y = np.squeeze(y)
+            p = image_normalization(np.squeeze(p),img_min=0., img_max=1.)
+            tmp_ssim = compare_ssim(y,p,gaussian_weights=True, multichannel=True)
+            tmp_psnr = compare_psnr(y,p)
+            imgs_ssim.append(tmp_ssim)
+            imgs_psnr.append(tmp_psnr)
+            print(i,tmp_name)
 
-            print("this implementation just works with omsiv")
-
-        # ----------- tensor size -------------#
-        hl = [3, 32, 64, 32, 64, 32, 3]
-        BATCH_SIZE = FLAGS.batch_size
-        IM_WIDTH = X.shape[1]
-        IM_HEIGHT = X.shape[0]
-        IM_CHANNELS = FLAGS.num_channels
-        TENSOR_SHAPE = (BATCH_SIZE,IM_HEIGHT,IM_WIDTH, IM_CHANNELS)
-
-        RGBN = tf.placeholder(tf.float32, shape=TENSOR_SHAPE)
-
-        if FLAGS.model_name=="CDNet":
-
-            Y_hat, tmp = CDNet(hl, RGBN, reuse=False, train=False)  # for testing
-
-        elif FLAGS.model_name=="ENDENet":
-            Y_hat, tmp = ENDENet(hl, RGBN, reuse=False, train=False)  # for testing
-        del tmp
-        # -----------Restore Graph -------#
-
-        init_op = tf.global_variables_initializer()
-        sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
-        sess.run(init_op)
-
-        checkpoint_dir = "checkpoints/"+FLAGS.model_name
-        if not os.path.exists(checkpoint_dir):
-            print("Trained parameters DIR nor found")
-            sys.exit()
-
-        tl.files.load_ckpt(sess=sess, mode_name='{}_{}.ckpt'.format(FLAGS.model_name,FLAGS.dataset_name),
-                           save_dir=checkpoint_dir)
-
-        if FLAGS.batch_size==1:
-
-            for i in range(n_test):
-                X, X_names = get_testing_batch(FLAGS,test_list,
-                                               current_indx = i)
-                X=np.float32(X)
-                pred = sess.run(Y_hat, {RGBN: X})
-                pred=normalization_data_01(pred)
-                print(pred.shape)
-                save_batch_pred(FLAGS,Y_hat=pred, Y_hat_name=X_names)
-
-            print("CDNet testing finished successfully")
-            sys.exit()
-
-        else:
-            idx = np.arange(n_test)
-            for i in range(0,n_test,FLAGS.batch_size):
-                X, X_names = get_testing_batch(FLAGS,test_list,
-                                               current_indx = i)
-                X=np.float32(X)
-                pred = sess.run(Y_hat, {RGBN: X})
-                pred = normalization_data_01(pred)
-                print(pred.shape)
-                save_batch_pred(FLAGS,Y_hat=pred, Y_hat_name=X_names)
-
-            print("CDNet testing finished successfully")
-            sess.close()
-            sys.exit()
-
-else:
-    print("There is something bad, we cannot find other NN model")
-    sys.exit()
+        res_img = np.concatenate((y,p),axis=1)
+        cv_imshow(img=np.uint8(image_normalization(res_img)),title='last pred image'+tmp_name)
+        imgs_psnr = np.array(imgs_psnr)
+        imgs_ssim = np.array(imgs_ssim)
+        print('-------------------------------------------')
+        print('Evaluation finished on: ',arg.dataset_name,'dataset')
+        print('PSNR: ', imgs_psnr.mean())
+        print('SSIM: ', imgs_ssim.mean())
+        print('-------------------------------------------')

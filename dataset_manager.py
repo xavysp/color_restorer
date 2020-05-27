@@ -13,7 +13,8 @@ class DataLoader(tf.keras.utils.Sequence):
 
     def __init__(self,data_name,arg=None):
 
-        self.dim = arg.image_size # (arg.image_size,arg.image_size,3)
+        self.dim_w = arg.img_width # (arg.image_size,arg.image_size,3)
+        self.dim_h = arg.img_height # (arg.image_size,arg.image_size,3)
         self.args = arg
         self.data_name =data_name
         self.bs = arg.batch_size
@@ -22,6 +23,12 @@ class DataLoader(tf.keras.utils.Sequence):
         self.data_list = self._build_index()
         self.indices =self.on_epoch_end()
         # print(len(self.indices))
+        if not self.is_training and arg.model_state=="test":
+            i_width= arg.img_width if arg.img_width%4==0 else (arg.img_width//4+1)*4
+            i_height= arg.img_height if arg.img_height%4==0 else (arg.img_height//4+1)*4
+            self.input_shape = (None,i_height, i_width,4)
+            self.imgs_shape=[]
+            # OMSIV real size= 320,580,3
 
     def _build_index(self):
 
@@ -36,7 +43,8 @@ class DataLoader(tf.keras.utils.Sequence):
 
         input_path = [os.path.join(base_dir,line[0]) for line in file_list]
         gt_path = [os.path.join(base_dir,line[1]) for line in file_list]
-
+        if not self.is_training:
+            self.imgs_name = [os.path.basename(k) for k in input_path]
         sample_indeces= [input_path, gt_path]
         return sample_indeces
 
@@ -56,15 +64,13 @@ class DataLoader(tf.keras.utils.Sequence):
         tmp_x_path = [x_list[k] for k in indices]
         tmp_y_path = [y_list[k] for k in indices]
 
-
         x,y = self.__data_generation(tmp_x_path,tmp_y_path)
-
         return x,y
 
     def __data_generation(self,x_path,y_path):
 
-        x = np.empty((self.bs,self.dim,self.dim,4))
-        y = np.empty((self.bs,self.dim,self.dim,3))
+        x = np.empty((self.bs,self.dim_h,self.dim_w,4),dtype="float32")
+        y = np.empty((self.bs,self.dim_h,self.dim_w,3),dtype="float32")
 
         for i,tmp_data in enumerate(x_path):
             tmp_x_path = tmp_data
@@ -78,10 +84,12 @@ class DataLoader(tf.keras.utils.Sequence):
         tmp_x = self.__read_h5(x_path)
         tmp_y = self.__read_h5(y_path)
         h,w,_ = tmp_x.shape
-        i_h = random.randint(0,h-self.dim)
-        i_w = random.randint(0,w-self.dim)
-        tmp_x = tmp_x[i_h:i_h+self.dim,i_w:i_w+self.dim,]
-        tmp_y = tmp_y[i_h:i_h+self.dim,i_w:i_w+self.dim,]
+        if self.args.model_state == "train":
+            i_h = random.randint(0,h-self.dim_h)
+            i_w = random.randint(0,w-self.dim_w)
+            tmp_x = tmp_x[i_h:i_h+self.dim_h,i_w:i_w+self.dim_w,]
+            tmp_y = tmp_y[i_h:i_h+self.dim_h,i_w:i_w+self.dim_w,]
+
         return tmp_x, tmp_y
 
     def __read_h5(self,file_path):
