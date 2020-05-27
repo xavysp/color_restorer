@@ -91,12 +91,14 @@ def train():
             # my_model.fit(data4training, epochs=arg.num_epochs,callbacks=my_callbacks)
 
             for epoch in range(arg.num_epochs):
+                total_loss = tf.Variable(0.)
                 for step,(x,y) in enumerate(data4training):
 
                     with tf.GradientTape() as tape:
                         p = my_model(x)
                         loss = loss_mse(y_true=y,y_pred=p)
                         loss = tf.math.reduce_sum(loss)
+                    total_loss = tf.add(total_loss,loss)
                     accuracy.update_state(y_true=y,y_pred=p)
                     gradients = tape.gradient(loss,my_model.trainable_variables)
                     optimizer.apply_gradients(zip(gradients,my_model.trainable_variables))
@@ -109,12 +111,13 @@ def train():
                 print('Model saved in:',ckpnt_path)
 
                 # visualize result
+                mean_loss = total_loss / 50
                 tmp_x = image_normalization(np.squeeze(x[2,:,:,:3]))
                 tmp_y = image_normalization(np.squeeze(y[2,...]))
                 tmp_p = p[2,...]
                 tmp_p = image_normalization(tmp_p.numpy())
                 vis_imgs = np.uint8(np.concatenate((tmp_x,tmp_y,tmp_p),axis=1))
-                img_test = 'Epoch: {0}  Loss: {1}'.format(epoch, loss.numpy())
+                img_test = 'Epoch: {0}  Loss: {1}'.format(epoch, mean_loss.numpy())
                 BLACK = (0, 0, 255)
                 font = cv.FONT_HERSHEY_SIMPLEX
                 font_size = 1.1
@@ -124,6 +127,8 @@ def train():
                 vis_imgs = cv.putText(vis_imgs, img_test, (x, y), font, font_size, font_color, font_thickness,
                                       cv.LINE_AA)
                 cv.imwrite(os.path.join(res_dir, 'results.png'), vis_imgs)
+
+                print("<<< End epoch loss: ",mean_loss.numpy()," >>>")
 
             my_model.summary()
             print('Training finished on: ', arg.dataset_name)

@@ -115,21 +115,25 @@ if arg.model_name =="CDNet" or arg.model_name=="ENDENet":
         # evaluation
         imgs_ssim = []
         imgs_psnr = []
+        imgs_name = data4testing.imgs_name
         for i,(x,y) in enumerate(data4testing):
             p = my_model(x)
             # tmp_shape = data4testing.imgs_shape[i]
-            tmp_name = data4testing.imgs_name[i]
-            p = p.numpy()
+            tmp_name = imgs_name[i]
+            p = np.squeeze(p.numpy())
             y = np.squeeze(y)
-            p = image_normalization(np.squeeze(p),img_min=0., img_max=1.)
+            p = image_normalization(p,img_min=0., img_max=1.)
             tmp_ssim = compare_ssim(y,p,gaussian_weights=True, multichannel=True)
             tmp_psnr = compare_psnr(y,p)
             imgs_ssim.append(tmp_ssim)
             imgs_psnr.append(tmp_psnr)
             print(i,tmp_name)
 
-        res_img = np.concatenate((y,p),axis=1)
-        cv_imshow(img=np.uint8(image_normalization(res_img)),title='last pred image'+tmp_name)
+        tmp_x = image_normalization(np.squeeze(x[0, :, :, :3]))
+        tmp_y = image_normalization(y)
+        tmp_p = image_normalization(p)
+        vis_imgs = np.uint8(np.concatenate((tmp_x, tmp_y, tmp_p), axis=1))
+        cv_imshow(img=np.uint8(image_normalization(vis_imgs)),title='last pred image'+tmp_name)
         imgs_psnr = np.array(imgs_psnr)
         imgs_ssim = np.array(imgs_ssim)
         print('-------------------------------------------')

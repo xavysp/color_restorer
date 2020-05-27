@@ -21,7 +21,7 @@ class DataLoader(tf.keras.utils.Sequence):
         self.is_training = True if arg.model_state.lower()=='train' else False
         self.shuffle=self.is_training
         self.data_list = self._build_index()
-        self.indices =self.on_epoch_end()
+        self.on_epoch_end()
         # print(len(self.indices))
         if not self.is_training and arg.model_state=="test":
             i_width= arg.img_width if arg.img_width%4==0 else (arg.img_width//4+1)*4
@@ -49,10 +49,9 @@ class DataLoader(tf.keras.utils.Sequence):
         return sample_indeces
 
     def on_epoch_end(self):
-        indx = np.arange(len(self.data_list[0]))
+        self.indices = np.arange(len(self.data_list[0]))
         if self.shuffle:
-            np.random.shuffle(indx)
-        return indx
+            np.random.shuffle(self.indices)
 
     def __len__(self):
         return len(self.indices)//self.bs
