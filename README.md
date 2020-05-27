@@ -1,6 +1,6 @@
 # CDNet and ENDENet
 ```diff
-- We are updating the repo, just give us a couple of days :)
+- we have updated our CDNet to the newer version of TensorFlow, dataloader is also improved.
 ```
 
 A python implemenation of [Wide-Band Color Imagery Restoration for RGB-NIR Single Sensor Images](http://www.mdpi.com/1424-8220/18/7/2059)
@@ -78,13 +78,12 @@ Once your dataset is downloaded please go to [train.py](https://github.com/xavys
 
 ## Requirements
 
-Python 3
+Python 3.7
 
-Tensorflow  1.2 or higher
+Tensorflow  2.2 or higher
 
 Numpy
 
-Matplotlib
 
 ## Citation
 
