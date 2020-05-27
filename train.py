@@ -12,10 +12,6 @@ import argparse
 
 import time
 
-from tqdm import tqdm
-import pprint
-import matplotlib.pyplot as plt
-
 from utls import (h5_reader,
                    mse, ssim_psnr,
                    h5_writer)
@@ -36,7 +32,7 @@ parser.add_argument("--model_name",type=str, default='CDNet',help="Choise one of
 parser.add_argument('--num_channels',type=int, default= 3,help="The number of channels in the images to process")
 parser.add_argument('--batch_size',type=int, default= 8,help="The size of the mini-batch")
 
-parser.add_argument('--num_epochs',type=int, default= 200,help="The number of iterations during the training")
+parser.add_argument('--num_epochs',type=int, default= 100,help="The number of iterations during the training")
 parser.add_argument('--margin', type=float, default=1.0,help="The margin value for the loss function")
 parser.add_argument('--lr', type=float, default=1e-4,help="The learning rate for the SGD optimization")
 parser.add_argument('--weight_decay', type=float, default=0.0002, help="Set the weight decay")

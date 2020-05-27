@@ -9,24 +9,13 @@ __email__ = "xsoria@cvc.uab.es / xavysp@gmail.com"
 
 import numpy as np
 import tensorflow.keras as tfk
-import tensorflow as tf
 from skimage.measure import compare_psnr,compare_ssim
 
-import sys
-import os
-import cv2 as cv
-import h5py
 import platform
-# from tensorlayer.layers import *
-
-import matplotlib.pyplot as plt
 import argparse
-import pprint
 
-from utls import (h5_reader,cv_imshow,
-                   image_normalization,
-                   mse, ssim_psnr,
-                   h5_writer)
+from utls import cv_imshow, image_normalization
+
 from utilities.data_manager import *
 from dataset_manager import DataLoader
 from models.cdent import CDENT
