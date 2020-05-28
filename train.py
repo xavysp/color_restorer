@@ -122,7 +122,7 @@ def train():
                 x, y = 30, 30
                 vis_imgs = cv.putText(vis_imgs, img_test, (x, y), font, font_size, font_color, font_thickness,
                                       cv.LINE_AA)
-                cv.imwrite(os.path.join(res_dir, 'results.png'), vis_imgs)
+                cv.imwrite(os.path.join(res_dir, ' results.png'), vis_imgs)
 
                 print("<<< End epoch loss: ",mean_loss.numpy()," >>>")
 
